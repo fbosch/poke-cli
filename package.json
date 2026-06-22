@@ -1,0 +1,14 @@
+{
+  "name": "poke-cli",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "openspec": "openspec"
+  },
+  "devDependencies": {
+    "@fission-ai/openspec": "^1.4.1"
+  },
+  "trustedDependencies": [
+    "@fission-ai/openspec"
+  ]
+}
