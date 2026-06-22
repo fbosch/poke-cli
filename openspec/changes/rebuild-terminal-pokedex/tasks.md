@@ -28,8 +28,8 @@
 
 ## 4. Default Detail From PokeAPI
 
-- [ ] 4.1 Add user cache directory resolution with injectable test path and 30-day TTL behavior.
-- [ ] 4.2 Add cached PokeAPI resource fetching by canonical URL without exposing raw responses outside the PokeAPI module.
+- [x] 4.1 Add persisted TanStack Query cache configuration with injectable test path and per-query cache policies.
+- [ ] 4.2 Add PokeAPI resource query functions keyed by canonical URL without exposing raw responses outside the PokeAPI module.
 - [ ] 4.3 Add Zod schemas for consumed Pokémon, species, varieties, and evolution-chain fields.
 - [ ] 4.4 Add `PokemonDetail` model construction for a species Default Representative with name, National Dex number, types, abilities, height, weight, stats, deterministic flavor text, and Sprite reference placeholder.
 - [ ] 4.5 Render real Detail fields from `PokemonDetail` instead of placeholder Detail.
@@ -52,8 +52,8 @@
 
 ## 7. PokeSprite Runtime Sprite
 
-- [ ] 7.1 Add cached PokeSprite metadata fetching and parsing for sprite slug and asset resolution.
-- [ ] 7.2 Add cached PokeSprite PNG asset fetching by resolved Sprite URL.
+- [ ] 7.1 Add persisted PokeSprite metadata querying and parsing for sprite slug and asset resolution.
+- [ ] 7.2 Add PokeSprite PNG asset file caching by resolved Sprite URL.
 - [ ] 7.3 Add terminal-rendered Sprite rendering in Detail from cached PokeSprite-style source artwork.
 - [ ] 7.4 Keep Detail recoverable when Sprite resources fail, while surfacing the Sprite-specific error in the Detail UI.
 - [ ] 7.5 Verify the slice with PokeSprite metadata fixtures, sprite cache tests, known slug mapping tests, and Detail Sprite smoke.

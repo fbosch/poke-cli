@@ -39,9 +39,9 @@ The rebuild uses focused modules rather than layer-only tasks:
 - `cli`: command launch and argument interpretation.
 - `app-state`: Search, Detail, loading, error, shiny, form selector, and navigation state.
 - `search`: generated species index loading and Fuse.js ranking.
-- `pokeapi`: cached PokeAPI resource fetches and Zod schemas.
-- `pokesprite`: cached PokeSprite metadata and sprite asset resolution.
-- `cache`: user cache directory, TTL handling, and resource storage.
+- `query-cache`: TanStack Query client, persisted query cache storage, and per-query cache policy.
+- `pokeapi`: PokeAPI resource query functions and Zod schemas.
+- `pokesprite`: PokeSprite metadata queries, PNG asset file cache, and sprite asset resolution.
 - `pokemon-detail`: `PokemonDetail` model construction from validated resources.
 - `type-matchups`: dependency-backed Damage Taken calculation.
 - `ui`: OpenTUI React components consuming app state and internal models.
@@ -50,13 +50,13 @@ The rebuild uses focused modules rather than layer-only tasks:
 
 Search uses a generated static species index committed with the app. The generator rebuilds the index from PokeAPI species data and hand-maintained alias overrides. Runtime Search uses Fuse.js with weighted fields for English display name, slug, dex number variants, and aliases.
 
-Detail data is loaded on demand. Raw PokeAPI resources are cached by canonical resource URL with a 30-day TTL. `PokemonDetail` is built from validated resources and is the only data shape consumed by Detail UI components.
+Detail data is loaded on demand through TanStack Query with persisted query storage under the user cache directory. Query keys encode stable identities such as canonical PokeAPI URLs, Pokémon Detail targets, and PokeSprite metadata, and each query family defines its own stale and garbage-collection policy instead of sharing a single TTL. `PokemonDetail` is built from validated resources and is the only data shape consumed by Detail UI components.
 
 Detail loads atomically: the UI shows a loading state for a target Pokémon Species/Form and swaps to the new `PokemonDetail` only when required resources are ready. Failures are recoverable in-app.
 
 ### Sprites And Forms
 
-Sprites use PokeSprite resources fetched at runtime and cached under the user cache directory. The Sprite is terminal-rendered source artwork, not PokeAPI artwork and not a hard dependency on terminal pixel image protocols.
+Sprites use PokeSprite resources fetched at runtime. Metadata is loaded through persisted TanStack Query state, while PNG assets are stored as files under the user cache directory. The Sprite is terminal-rendered source artwork, not PokeAPI artwork and not a hard dependency on terminal pixel image protocols.
 
 Detail is forms-aware. PokeAPI species varieties define Pokémon Form identity and form-specific data. PokeSprite metadata maps those forms to regular and shiny Sprite assets. Search remains species-only; selecting a species opens its Default Representative and Detail can switch forms via a selector.
 
@@ -73,6 +73,6 @@ CI runs through `devenv shell` with frozen `bun.lock`, deterministic tests, gene
 - OpenTUI React and Bun may have native/build constraints -> Pin Zig and use `devenv` locally and in CI.
 - PokeAPI and PokeSprite slugs may not map one-to-one -> Keep explicit mapping logic, fixtures, and tests for known difficult forms.
 - Generated species index can drift -> Require `verify:index` to fail when generated data is stale.
-- Runtime external resources can fail -> Keep Search available offline, use cached Detail/Sprite resources when present, and show recoverable errors when missing.
+- Runtime external resources can fail -> Keep Search available offline, use persisted Detail/Sprite metadata and file-cached Sprite assets when present, and show recoverable errors when missing.
 - Form-aware Detail expands MVP scope -> Preserve vertical slices so default Detail works before form selection, sprite mapping, and carryover are added.
 - Terminal layout and rendering tests can become brittle -> Put most tests around model/state/cache/search logic and keep renderer smoke tests minimal.

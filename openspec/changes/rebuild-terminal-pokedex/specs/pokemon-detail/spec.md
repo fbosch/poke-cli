@@ -18,8 +18,8 @@ The system SHALL validate external PokeAPI responses with Zod before building in
 - **WHEN** a PokeAPI response is missing a required consumed field
 - **THEN** the app treats the resource as invalid and returns a recoverable Detail loading error
 
-### Requirement: Detail cache
-The system SHALL cache raw PokeAPI resources by canonical URL in the user cache directory with a 30-day TTL.
+### Requirement: Detail query cache
+The system SHALL cache PokeAPI-backed Detail queries in persisted TanStack Query storage under the user cache directory with cache policy defined per query family.
 
 #### Scenario: Cached Detail works offline
 - **WHEN** required Detail resources are cached and network access is unavailable
@@ -29,9 +29,9 @@ The system SHALL cache raw PokeAPI resources by canonical URL in the user cache 
 - **WHEN** required Detail resources are not cached and network access is unavailable
 - **THEN** the app shows a recoverable not-cached error rather than exiting
 
-#### Scenario: Expired cache refreshes
-- **WHEN** a cached PokeAPI resource is older than 30 days and network access is available
-- **THEN** the app refreshes the resource before building Detail
+#### Scenario: Stale cache refreshes by query policy
+- **WHEN** a cached PokeAPI-backed query is older than its configured stale policy and network access is available
+- **THEN** the app refreshes the query before building Detail
 
 ### Requirement: Damage Taken
 The system SHALL show non-neutral Damage Taken multipliers for the selected Pokémon types.

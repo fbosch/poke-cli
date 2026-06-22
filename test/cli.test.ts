@@ -1,6 +1,14 @@
 import { expect, test } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { applyAppKey, createInitialAppState } from "../src/app-state";
 import { getInitialSearchQuery, searchScreenTitle } from "../src/cli";
+import {
+  createFileStorage,
+  persistedQueryMaxAge,
+  queryCachePolicies,
+} from "../src/query-cache";
 
 test("launches into the Search state without arguments", () => {
   expect(createInitialAppState()).toEqual({
@@ -29,4 +37,32 @@ test("ignores non-exit keys in the Search state", () => {
   const state = createInitialAppState("pika");
 
   expect(applyAppKey(state, { name: "j" })).toBe(state);
+});
+
+test("defines per-query cache policies", () => {
+  expect(queryCachePolicies.pokeapiResource.gcTime).toBeGreaterThan(
+    queryCachePolicies.pokemonDetail.gcTime,
+  );
+  expect(queryCachePolicies.pokespriteMetadata.gcTime).toBeGreaterThan(
+    queryCachePolicies.pokeapiResource.gcTime,
+  );
+  expect(persistedQueryMaxAge).toBe(
+    queryCachePolicies.pokespriteMetadata.gcTime,
+  );
+});
+
+test("persists query cache state to filesystem storage", async () => {
+  const cacheDirectory = await mkdtemp(join(tmpdir(), "pokedex-query-cache-"));
+
+  try {
+    const storage = createFileStorage(cacheDirectory);
+
+    await storage.setItem("query-client.json", "cached-state");
+    expect(await storage.getItem("query-client.json")).toBe("cached-state");
+
+    await storage.removeItem("query-client.json");
+    expect(await storage.getItem("query-client.json")).toBeNull();
+  } finally {
+    await rm(cacheDirectory, { force: true, recursive: true });
+  }
 });

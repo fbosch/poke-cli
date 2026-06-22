@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: PokeSprite resource loading
-The system SHALL fetch PokeSprite metadata and Sprite assets on demand and cache them in the user cache directory.
+The system SHALL fetch PokeSprite metadata and Sprite assets on demand, persist metadata through TanStack Query, and cache Sprite asset files in the user cache directory.
 
 #### Scenario: Sprite asset is cached after load
 - **WHEN** Detail loads a Sprite from PokeSprite for the first time

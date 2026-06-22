@@ -1,6 +1,6 @@
 import { createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
-import { App } from "./ui/app";
+import { Root } from "./ui/root";
 
 export const searchScreenTitle = "Search";
 
@@ -21,7 +21,7 @@ export async function main(args = Bun.argv.slice(2)): Promise<void> {
   });
 
   createRoot(renderer).render(
-    <App initialQuery={initialQuery} renderer={renderer} />,
+    <Root initialQuery={initialQuery} renderer={renderer} />,
   );
 }
 
