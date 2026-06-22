@@ -1,0 +1,37 @@
+[
+  {
+    "dexNumber": 1,
+    "name": "Bulbasaur",
+    "slug": "bulbasaur"
+  },
+  {
+    "dexNumber": 25,
+    "name": "Pikachu",
+    "slug": "pikachu"
+  },
+  {
+    "dexNumber": 29,
+    "name": "Nidoran♀",
+    "slug": "nidoran-f"
+  },
+  {
+    "dexNumber": 32,
+    "name": "Nidoran♂",
+    "slug": "nidoran-m"
+  },
+  {
+    "dexNumber": 122,
+    "name": "Mr. Mime",
+    "slug": "mr-mime"
+  },
+  {
+    "dexNumber": 133,
+    "name": "Eevee",
+    "slug": "eevee"
+  },
+  {
+    "dexNumber": 150,
+    "name": "Mewtwo",
+    "slug": "mewtwo"
+  }
+]

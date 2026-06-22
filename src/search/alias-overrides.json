@@ -1,0 +1,9 @@
+{
+  "bulbasaur": ["001", "1"],
+  "nidoran-f": ["nidoran female", "nidoran f", "nidoran♀"],
+  "nidoran-m": ["nidoran male", "nidoran m", "nidoran♂"],
+  "pikachu": ["pika", "025", "25"],
+  "mr-mime": ["mr mime", "mister mime", "122"],
+  "eevee": ["133"],
+  "mewtwo": ["150"]
+}

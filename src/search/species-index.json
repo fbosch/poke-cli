@@ -1,1 +1,51 @@
-[]
+[
+  {
+    "dexNumber": 1,
+    "name": "Bulbasaur",
+    "slug": "bulbasaur",
+    "aliases": ["001", "1"],
+    "dexNumbers": ["1", "001"]
+  },
+  {
+    "dexNumber": 25,
+    "name": "Pikachu",
+    "slug": "pikachu",
+    "aliases": ["pika", "025", "25"],
+    "dexNumbers": ["25", "025"]
+  },
+  {
+    "dexNumber": 29,
+    "name": "Nidoran♀",
+    "slug": "nidoran-f",
+    "aliases": ["nidoran female", "nidoran f", "nidoran♀"],
+    "dexNumbers": ["29", "029"]
+  },
+  {
+    "dexNumber": 32,
+    "name": "Nidoran♂",
+    "slug": "nidoran-m",
+    "aliases": ["nidoran male", "nidoran m", "nidoran♂"],
+    "dexNumbers": ["32", "032"]
+  },
+  {
+    "dexNumber": 122,
+    "name": "Mr. Mime",
+    "slug": "mr-mime",
+    "aliases": ["mr mime", "mister mime", "122"],
+    "dexNumbers": ["122"]
+  },
+  {
+    "dexNumber": 133,
+    "name": "Eevee",
+    "slug": "eevee",
+    "aliases": ["133"],
+    "dexNumbers": ["133"]
+  },
+  {
+    "dexNumber": 150,
+    "name": "Mewtwo",
+    "slug": "mewtwo",
+    "aliases": ["150"],
+    "dexNumbers": ["150"]
+  }
+]

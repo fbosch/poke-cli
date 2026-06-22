@@ -14,6 +14,7 @@ test("launches into the Search state without arguments", () => {
   expect(createInitialAppState()).toEqual({
     screen: "search",
     query: "",
+    selectedIndex: 0,
     shouldExit: false,
   });
   expect(searchScreenTitle).toBe("Search");
@@ -21,6 +22,38 @@ test("launches into the Search state without arguments", () => {
 
 test("uses launch arguments as the initial Search query", () => {
   expect(getInitialSearchQuery(["mr", "mime"])).toBe("mr mime");
+});
+
+test("exact launch arguments open placeholder Detail", () => {
+  expect(createInitialAppState("pikachu")).toMatchObject({
+    screen: "detail",
+    species: {
+      slug: "pikachu",
+    },
+  });
+});
+
+test("ambiguous launch arguments open prefilled Search", () => {
+  expect(createInitialAppState("pika")).toEqual({
+    screen: "search",
+    query: "pika",
+    selectedIndex: 0,
+    shouldExit: false,
+  });
+});
+
+test("Search selection moves with j and k", () => {
+  const selected = applyAppKey(createInitialAppState(), { name: "j" });
+  const reset = applyAppKey(selected, { name: "k" });
+
+  expect(selected).toMatchObject({
+    screen: "search",
+    selectedIndex: 1,
+  });
+  expect(reset).toMatchObject({
+    screen: "search",
+    selectedIndex: 0,
+  });
 });
 
 test.each([
@@ -36,7 +69,30 @@ test.each([
 test("ignores non-exit keys in the Search state", () => {
   const state = createInitialAppState("pika");
 
-  expect(applyAppKey(state, { name: "j" })).toBe(state);
+  expect(applyAppKey(state, { name: "tab" })).toBe(state);
+});
+
+test("Search opens placeholder Detail on Enter", () => {
+  const next = applyAppKey(createInitialAppState("pika"), { name: "enter" });
+
+  expect(next).toMatchObject({
+    screen: "detail",
+    species: {
+      slug: "pikachu",
+    },
+  });
+});
+
+test("Detail returns to Search on slash", () => {
+  const detail = applyAppKey(createInitialAppState("pika"), { name: "enter" });
+  const next = applyAppKey(detail, { name: "/" });
+
+  expect(next).toEqual({
+    screen: "search",
+    query: "pika",
+    selectedIndex: 0,
+    shouldExit: false,
+  });
 });
 
 test("defines per-query cache policies", () => {

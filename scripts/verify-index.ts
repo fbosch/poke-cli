@@ -1,5 +1,11 @@
-const expected = `${JSON.stringify([], null, 2)}\n`;
-const actual = await Bun.file("src/search/species-index.json").text();
+import { buildSpeciesIndex } from "./build-species-index";
+
+const index = buildSpeciesIndex();
+
+const expected = JSON.stringify(index);
+const actual = JSON.stringify(
+  await Bun.file("src/search/species-index.json").json(),
+);
 
 if (actual !== expected) {
   process.stderr.write(
@@ -7,5 +13,3 @@ if (actual !== expected) {
   );
   process.exit(1);
 }
-
-export {};

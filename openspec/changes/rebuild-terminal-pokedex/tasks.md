@@ -18,13 +18,13 @@
 
 ## 3. Static Species Search
 
-- [ ] 3.1 Add species index source fixtures, alias overrides, and a generator that writes the runtime static Pokémon Species index.
-- [ ] 3.2 Add `verify:index` so CI can fail when the committed static index is stale.
-- [ ] 3.3 Add Fuse.js search over English name, slug, National Dex number variants, and aliases using weighted ranking.
-- [ ] 3.4 Render Search query input and ranked Pokémon Species results in the TUI with `j/k` and arrow selection.
-- [ ] 3.5 Open placeholder Detail from Search on Enter while keeping Search species-only.
-- [ ] 3.6 Support exact launch arguments opening placeholder Detail and ambiguous launch arguments opening prefilled Search.
-- [ ] 3.7 Verify the slice with search ranking tests for `pikachu`, `pika`, `001`, `nidoran female`, and `mr mime`, plus a manual TUI smoke run.
+- [x] 3.1 Add species index source fixtures, alias overrides, and a generator that writes the runtime static Pokémon Species index.
+- [x] 3.2 Add `verify:index` so CI can fail when the committed static index is stale.
+- [x] 3.3 Add Fuse.js search over English name, slug, National Dex number variants, and aliases using weighted ranking.
+- [x] 3.4 Render Search query input and ranked Pokémon Species results in the TUI with `j/k` and arrow selection.
+- [x] 3.5 Open placeholder Detail from Search on Enter while keeping Search species-only.
+- [x] 3.6 Support exact launch arguments opening placeholder Detail and ambiguous launch arguments opening prefilled Search.
+- [x] 3.7 Verify the slice with search ranking tests for `pikachu`, `pika`, `001`, `nidoran female`, and `mr mime`, plus a manual TUI smoke run.
 
 ## 4. Default Detail From PokeAPI
 
