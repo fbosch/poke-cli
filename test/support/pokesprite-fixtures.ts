@@ -7,6 +7,7 @@ export const pokespritePokemonMetadata = {
       forms: {
         $: { has_female: false, has_right: false },
         "mega-x": { has_female: false, has_right: false },
+        "mega-y": { has_female: false, has_right: false },
       },
     },
   },
@@ -36,6 +37,10 @@ export const pokespritePokemonMetadata = {
           has_female: true,
           has_right: false,
           has_unofficial_female_icon: true,
+        },
+        "rock-star": {
+          has_female: false,
+          has_right: false,
         },
       },
     },

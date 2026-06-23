@@ -38,6 +38,29 @@ const pikachuDetail: PokemonDetail = {
   dexNumber: 25,
   eggGroups: ["Field", "Fairy"],
   flavorText: "Mouse Pokemon.",
+  form: {
+    displayName: "Pikachu (Default)",
+    isDefault: true,
+    pokemonName: "pikachu",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/25/",
+    spriteFormKey: "$",
+  },
+  forms: [
+    {
+      displayName: "Pikachu (Default)",
+      isDefault: true,
+      pokemonName: "pikachu",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/25/",
+      spriteFormKey: "$",
+    },
+    {
+      displayName: "Pikachu Rock Star",
+      isDefault: false,
+      pokemonName: "pikachu-rock-star",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/pikachu-rock-star/",
+      spriteFormKey: "rock-star",
+    },
+  ],
   genderRatio: { femalePercent: 50, kind: "gendered", malePercent: 50 },
   heightMeters: 0.4,
   name: "Pikachu",
@@ -272,6 +295,58 @@ test("Detail ability viewer closes with Escape instead of exiting", () => {
     screen: "detail",
     detailOverlay: undefined,
     shouldExit: false,
+  });
+});
+
+test("Detail form selector opens, moves, and closes with Escape", () => {
+  const state = loadedPikachuDetailState();
+  const opened = applyAppKey(state, { name: "f" });
+  const moved = applyAppKey(opened, { name: "j" });
+  const closed = applyAppKey(moved, { name: "escape" });
+
+  expect(opened).toMatchObject({
+    screen: "detail",
+    detailOverlay: { kind: "forms", selectedIndex: 0 },
+  });
+  expect(moved).toMatchObject({
+    screen: "detail",
+    detailOverlay: { kind: "forms", selectedIndex: 1 },
+  });
+  expect(closed).toMatchObject({
+    screen: "detail",
+    detailOverlay: undefined,
+    shouldExit: false,
+  });
+});
+
+test("Detail form selector does not open without alternate forms", () => {
+  const state = detailLoadSucceeded(
+    createInitialAppState("pikachu") as DetailState,
+    findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu"),
+    {
+      ...pikachuDetail,
+      forms: [pikachuDetail.form],
+    },
+  );
+
+  expect(applyAppKey(state, { name: "f" })).toBe(state);
+});
+
+test("Detail form selector loads the selected form", () => {
+  const state = loadedPikachuDetailState();
+  const opened = applyAppKey(state, { name: "f" });
+  const moved = applyAppKey(opened, { name: "down" });
+  const selected = applyAppKey(moved, { name: "enter" });
+
+  expect(selected).toMatchObject({
+    screen: "detail",
+    detailOverlay: undefined,
+    form: {
+      pokemonName: "pikachu-rock-star",
+      spriteFormKey: "rock-star",
+    },
+    species: { slug: "pikachu" },
+    status: "loading",
   });
 });
 

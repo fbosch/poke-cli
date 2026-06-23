@@ -1,8 +1,10 @@
 import { expect, test } from "bun:test";
 import { HttpResponse, http } from "msw";
 import {
+  buildPokemonForms,
   buildPokemonAbilityDetail,
   buildDefaultPokemonDetail,
+  buildPokemonDetail,
   pokemonAbilityDetailsQueryOptions,
   pokemonDetailQueryKey,
   pokemonDetailQueryOptions,
@@ -10,7 +12,10 @@ import {
 import { createAppQueryClient, queryCachePolicies } from "../src/query-cache";
 import type { SpeciesIndexEntry } from "../src/search";
 import {
+  charizardMegaXPokemon,
+  charizardSpecies,
   pikachuPokemon,
+  pikachuRockStarPokemon,
   pikachuSpecies,
   staticAbility,
 } from "./support/pokeapi-fixtures";
@@ -26,7 +31,30 @@ const pikachuIndexEntry: SpeciesIndexEntry = {
   slug: "pikachu",
 };
 
+const charizardIndexEntry: SpeciesIndexEntry = {
+  aliases: ["006", "6"],
+  dexNumber: 6,
+  dexNumbers: ["6", "006"],
+  name: "Charizard",
+  slug: "charizard",
+};
+
+const eeveeIndexEntry: SpeciesIndexEntry = {
+  aliases: ["133"],
+  dexNumber: 133,
+  dexNumbers: ["133"],
+  name: "Eevee",
+  slug: "eevee",
+};
+
 test("builds Default Representative PokemonDetail from validated PokeAPI resources", () => {
+  const forms = buildPokemonForms(pikachuIndexEntry, pikachuSpecies);
+  const defaultForm = forms[0];
+
+  if (defaultForm === undefined) {
+    throw new Error("Missing Pikachu default form fixture");
+  }
+
   const detail = buildDefaultPokemonDetail(
     pikachuIndexEntry,
     pikachuSpecies,
@@ -58,6 +86,8 @@ test("builds Default Representative PokemonDetail from validated PokeAPI resourc
     eggGroups: ["Field", "Fairy"],
     flavorText:
       "When several of these POKéMON gather, their electricity can build and cause lightning storms.",
+    form: defaultForm,
+    forms,
     genderRatio: { femalePercent: 50, kind: "gendered", malePercent: 50 },
     heightMeters: 0.4,
     name: "Pikachu",
@@ -77,6 +107,83 @@ test("builds Default Representative PokemonDetail from validated PokeAPI resourc
     types: ["Electric"],
     weightKilograms: 6,
   });
+});
+
+test("normalizes PokeAPI varieties into Pokemon Forms", () => {
+  expect(buildPokemonForms(charizardIndexEntry, charizardSpecies)).toEqual([
+    {
+      displayName: "Charizard (Default)",
+      isDefault: true,
+      pokemonName: "charizard",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/6/",
+      spriteFormKey: "$",
+    },
+    {
+      displayName: "Charizard Mega X",
+      isDefault: false,
+      pokemonName: "charizard-mega-x",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/charizard-mega-x/",
+      spriteFormKey: "mega-x",
+    },
+    {
+      displayName: "Charizard Mega Y",
+      isDefault: false,
+      pokemonName: "charizard-mega-y",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/charizard-mega-y/",
+      spriteFormKey: "mega-y",
+    },
+  ]);
+
+  expect(buildPokemonForms(pikachuIndexEntry, pikachuSpecies)).toContainEqual({
+    displayName: "Pikachu Rock Star",
+    isDefault: false,
+    pokemonName: "pikachu-rock-star",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/pikachu-rock-star/",
+    spriteFormKey: "rock-star",
+  });
+});
+
+test("excludes unsupported Gmax varieties from selectable Pokemon Forms", () => {
+  expect(
+    buildPokemonForms(eeveeIndexEntry, {
+      ...pikachuSpecies,
+      id: 133,
+      name: "eevee",
+      names: [
+        {
+          language: {
+            name: "en",
+            url: "https://pokeapi.co/api/v2/language/9/",
+          },
+          name: "Eevee",
+        },
+      ],
+      varieties: [
+        {
+          is_default: true,
+          pokemon: {
+            name: "eevee",
+            url: "https://pokeapi.co/api/v2/pokemon/133/",
+          },
+        },
+        {
+          is_default: false,
+          pokemon: {
+            name: "eevee-gmax",
+            url: "https://pokeapi.co/api/v2/pokemon/eevee-gmax/",
+          },
+        },
+      ],
+    }),
+  ).toEqual([
+    {
+      displayName: "Eevee (Default)",
+      isDefault: true,
+      pokemonName: "eevee",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/133/",
+      spriteFormKey: "$",
+    },
+  ]);
 });
 
 test("builds PokemonAbilityDetail from validated PokeAPI Ability resources", () => {
@@ -135,6 +242,78 @@ test("loads Default Representative PokemonDetail through mocked PokeAPI queries"
   });
   expect(options.staleTime).toBe(queryCachePolicies.pokemonDetail.staleTime);
   expect(options.gcTime).toBe(queryCachePolicies.pokemonDetail.gcTime);
+});
+
+test("loads form-specific PokemonDetail through mocked PokeAPI queries", async () => {
+  server.use(
+    http.get("https://pokeapi.co/api/v2/pokemon-species/25/", () => {
+      return HttpResponse.json(pikachuSpecies);
+    }),
+    http.get("https://pokeapi.co/api/v2/pokemon/pikachu-rock-star/", () => {
+      return HttpResponse.json(pikachuRockStarPokemon);
+    }),
+  );
+  const queryClient = {
+    fetchQuery: <TData>(resourceOptions: { queryFn?: unknown }) => {
+      return executeQuery<TData>(resourceOptions);
+    },
+  };
+  const rockStarForm = buildPokemonForms(
+    pikachuIndexEntry,
+    pikachuSpecies,
+  ).find((form) => form.pokemonName === "pikachu-rock-star");
+
+  if (rockStarForm === undefined) {
+    throw new Error("Missing Pikachu Rock Star form fixture");
+  }
+
+  const options = pokemonDetailQueryOptions(
+    pikachuIndexEntry,
+    queryClient,
+    rockStarForm,
+  );
+
+  await expect(executeQuery(options)).resolves.toMatchObject({
+    form: {
+      pokemonName: "pikachu-rock-star",
+      spriteFormKey: "rock-star",
+    },
+    name: "Pikachu Rock Star",
+    types: ["Electric"],
+  });
+  expect(pokemonDetailQueryKey(pikachuIndexEntry, rockStarForm)).toEqual([
+    "pokemon-detail",
+    "pikachu",
+    "pikachu-rock-star",
+  ]);
+});
+
+test("builds form-specific PokemonDetail mapping", () => {
+  const forms = buildPokemonForms(charizardIndexEntry, charizardSpecies);
+  const megaX = forms.find((form) => form.pokemonName === "charizard-mega-x");
+
+  if (megaX === undefined) {
+    throw new Error("Missing Charizard Mega X form fixture");
+  }
+
+  expect(
+    buildPokemonDetail(
+      charizardIndexEntry,
+      charizardSpecies,
+      charizardMegaXPokemon,
+      forms,
+      megaX,
+    ),
+  ).toMatchObject({
+    form: {
+      displayName: "Charizard Mega X",
+      spriteFormKey: "mega-x",
+    },
+    heightMeters: 1.7,
+    name: "Charizard Mega X",
+    types: ["Fire", "Dragon"],
+    weightKilograms: 110.5,
+  });
 });
 
 test("loads cached PokemonDetail without network access", async () => {

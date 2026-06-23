@@ -23,6 +23,8 @@ export type PokemonDetail = {
   dexNumber: number;
   eggGroups: string[];
   flavorText: string;
+  form: PokemonForm;
+  forms: PokemonForm[];
   genderRatio: PokemonGenderRatio;
   heightMeters: number;
   name: string;
@@ -37,6 +39,14 @@ export type PokemonAbility = {
   isHidden: boolean;
   name: string;
   url?: string;
+};
+
+export type PokemonForm = {
+  displayName: string;
+  isDefault: boolean;
+  pokemonName: string;
+  pokemonUrl: string;
+  spriteFormKey: string;
 };
 
 export type PokemonAbilityDetail = {
@@ -59,7 +69,11 @@ export type PokemonSpriteReference = {
   label: string;
 };
 
-type PokemonDetailQueryKey = readonly ["pokemon-detail", speciesSlug: string];
+type PokemonDetailQueryKey = readonly [
+  "pokemon-detail",
+  speciesSlug: string,
+  formKey: string,
+];
 type PokemonAbilityDetailsQueryKey = readonly [
   "pokemon-ability-details",
   abilityUrls: readonly string[],
@@ -67,16 +81,18 @@ type PokemonAbilityDetailsQueryKey = readonly [
 
 export function pokemonDetailQueryKey(
   species: SpeciesIndexEntry,
+  form?: PokemonForm,
 ): PokemonDetailQueryKey {
-  return ["pokemon-detail", species.slug];
+  return ["pokemon-detail", species.slug, pokemonFormTargetKey(form)];
 }
 
 export function pokemonDetailQueryOptions(
   species: SpeciesIndexEntry,
   queryClient: ResourceQueryClient,
+  form?: PokemonForm,
 ) {
   return queryOptions({
-    queryKey: pokemonDetailQueryKey(species),
+    queryKey: pokemonDetailQueryKey(species, form),
     queryFn: async () => {
       const speciesResource = await queryClient.fetchQuery(
         pokeApiResourceQueryOptions({
@@ -84,21 +100,33 @@ export function pokemonDetailQueryOptions(
           url: `pokemon-species/${species.dexNumber}`,
         }),
       );
+      const forms = buildPokemonForms(species, speciesResource);
+      const selectedForm = getSelectedPokemonForm(forms, form);
       const pokemonResource = await queryClient.fetchQuery(
         pokeApiResourceQueryOptions({
           parse: parsePokemonResource,
-          url: getDefaultPokemonUrl(speciesResource),
+          url: selectedForm.pokemonUrl,
         }),
       );
 
-      return buildDefaultPokemonDetail(
+      return buildPokemonDetail(
         species,
         speciesResource,
         pokemonResource,
+        forms,
+        selectedForm,
       );
     },
     ...queryCachePolicies.pokemonDetail,
   });
+}
+
+export function pokemonFormTargetKey(form: PokemonForm | undefined): string {
+  if (form === undefined || form.isDefault) {
+    return "$";
+  }
+
+  return form.pokemonName;
 }
 
 export function pokemonAbilityDetailsQueryOptions(
@@ -143,6 +171,23 @@ export function buildDefaultPokemonDetail(
   speciesResource: PokeApiPokemonSpecies,
   pokemonResource: PokeApiPokemon,
 ): PokemonDetail {
+  const forms = buildPokemonForms(species, speciesResource);
+  return buildPokemonDetail(
+    species,
+    speciesResource,
+    pokemonResource,
+    forms,
+    getSelectedPokemonForm(forms),
+  );
+}
+
+export function buildPokemonDetail(
+  species: SpeciesIndexEntry,
+  speciesResource: PokeApiPokemonSpecies,
+  pokemonResource: PokeApiPokemon,
+  forms: readonly PokemonForm[],
+  form: PokemonForm,
+): PokemonDetail {
   const types = pokemonResource.types
     .toSorted((left, right) => left.slot - right.slot)
     .map((entry) => formatResourceName(entry.type.name));
@@ -161,9 +206,13 @@ export function buildDefaultPokemonDetail(
       formatResourceName(eggGroup.name),
     ),
     flavorText: selectFlavorText(speciesResource),
+    form,
+    forms: [...forms],
     genderRatio: formatGenderRatio(speciesResource.gender_rate),
     heightMeters: pokemonResource.height / 10,
-    name: getEnglishSpeciesName(speciesResource) ?? species.name,
+    name: form.isDefault
+      ? (getEnglishSpeciesName(speciesResource) ?? species.name)
+      : formatResourceName(pokemonResource.name),
     species: getEnglishGenus(speciesResource) ?? "Unknown Pokemon",
     sprite: {
       kind: "placeholder",
@@ -176,6 +225,51 @@ export function buildDefaultPokemonDetail(
     types,
     weightKilograms: pokemonResource.weight / 10,
   };
+}
+
+export function buildPokemonForms(
+  species: SpeciesIndexEntry,
+  speciesResource: PokeApiPokemonSpecies,
+): PokemonForm[] {
+  const forms = speciesResource.varieties
+    .map((variety) => ({
+      displayName: getPokemonFormDisplayName(
+        species,
+        variety.pokemon.name,
+        variety.is_default,
+      ),
+      isDefault: variety.is_default,
+      pokemonName: variety.pokemon.name,
+      pokemonUrl: variety.pokemon.url,
+      spriteFormKey: getPokeSpriteFormKey(
+        species.slug,
+        variety.pokemon.name,
+        variety.is_default,
+      ),
+    }))
+    .filter(isSelectablePokemonForm);
+
+  if (forms.some((form) => form.isDefault) === false) {
+    throw new Error(
+      `PokeAPI species ${speciesResource.name} has no default variety`,
+    );
+  }
+
+  return forms.toSorted((left, right) => {
+    if (left.isDefault) {
+      return -1;
+    }
+
+    if (right.isDefault) {
+      return 1;
+    }
+
+    return left.displayName.localeCompare(right.displayName);
+  });
+}
+
+function isSelectablePokemonForm(form: PokemonForm): boolean {
+  return form.isDefault || form.spriteFormKey !== "gmax";
 }
 
 export function buildPokemonAbilityDetail(
@@ -221,18 +315,26 @@ function formatGenderRatio(genderRate: number): PokemonGenderRatio {
   return { femalePercent, kind: "gendered", malePercent };
 }
 
-function getDefaultPokemonUrl(speciesResource: PokeApiPokemonSpecies): string {
-  const defaultVariety = speciesResource.varieties.find(
-    (variety) => variety.is_default,
-  );
+function getSelectedPokemonForm(
+  forms: readonly PokemonForm[],
+  selectedForm?: PokemonForm,
+): PokemonForm {
+  const form =
+    selectedForm === undefined
+      ? forms.find((candidate) => candidate.isDefault)
+      : forms.find(
+          (candidate) => candidate.pokemonName === selectedForm.pokemonName,
+        );
 
-  if (defaultVariety === undefined) {
+  if (form === undefined) {
     throw new Error(
-      `PokeAPI species ${speciesResource.name} has no default variety`,
+      selectedForm === undefined
+        ? "PokeAPI species has no default variety"
+        : `PokeAPI species is missing form ${selectedForm.pokemonName}`,
     );
   }
 
-  return defaultVariety.pokemon.url;
+  return form;
 }
 
 function getEnglishSpeciesName(
@@ -268,6 +370,32 @@ function formatResourceName(value: string): string {
     .split("-")
     .map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`)
     .join(" ");
+}
+
+function getPokemonFormDisplayName(
+  species: SpeciesIndexEntry,
+  pokemonName: string,
+  isDefault: boolean,
+): string {
+  if (isDefault) {
+    return `${species.name} (Default)`;
+  }
+
+  return formatResourceName(pokemonName);
+}
+
+function getPokeSpriteFormKey(
+  speciesSlug: string,
+  pokemonName: string,
+  isDefault: boolean,
+): string {
+  if (isDefault) {
+    return "$";
+  }
+
+  return pokemonName.startsWith(`${speciesSlug}-`)
+    ? pokemonName.slice(speciesSlug.length + 1)
+    : pokemonName;
 }
 
 function slugifyResourceName(value: string): string {

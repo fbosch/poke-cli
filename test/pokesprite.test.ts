@@ -13,6 +13,7 @@ import {
   pokespriteRenderedSpriteQueryKey,
   pokeSpriteAssetCachePath,
   resolveDefaultPokeSpriteAsset,
+  resolvePokemonFormPokeSpriteAsset,
   resolvePokeSpriteAsset,
 } from "../src/pokesprite";
 import { queryCachePolicies } from "../src/query-cache";
@@ -33,6 +34,12 @@ test("parses consumed PokeSprite metadata fields", () => {
         hasFemale: true,
         hasRight: false,
         hasUnofficialFemaleIcon: true,
+        isAliasOf: undefined,
+      },
+      "rock-star": {
+        hasFemale: false,
+        hasRight: false,
+        hasUnofficialFemaleIcon: false,
         isAliasOf: undefined,
       },
     },
@@ -134,13 +141,58 @@ test("keys rendered Sprite cache by dex number and shiny state", () => {
   expect(pokespriteRenderedSpriteQueryKey(pikachu)).toEqual([
     "pokesprite-rendered-sprite",
     25,
+    "$",
     false,
   ]);
   expect(pokespriteRenderedSpriteQueryKey(pikachu, true)).toEqual([
     "pokesprite-rendered-sprite",
     25,
+    "$",
     true,
   ]);
+});
+
+test("maps Pokemon Forms to PokeSprite regular and shiny assets", () => {
+  const metadata = parsePokeSpriteMetadata(pokespritePokemonMetadata);
+  const charizard: SpeciesIndexEntry = {
+    aliases: [],
+    dexNumber: 6,
+    dexNumbers: ["6", "006"],
+    name: "Charizard",
+    slug: "charizard",
+  };
+  const megaX = {
+    displayName: "Charizard Mega X",
+    isDefault: false,
+    pokemonName: "charizard-mega-x",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/charizard-mega-x/",
+    spriteFormKey: "mega-x",
+  };
+  const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
+  const rockStar = {
+    displayName: "Pikachu Rock Star",
+    isDefault: false,
+    pokemonName: "pikachu-rock-star",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/pikachu-rock-star/",
+    spriteFormKey: "rock-star",
+  };
+
+  expect(
+    resolvePokemonFormPokeSpriteAsset(metadata, charizard, megaX),
+  ).toMatchObject({
+    formKey: "mega-x",
+    shiny: false,
+    slug: "charizard-mega-x",
+    url: "https://raw.githubusercontent.com/msikma/pokesprite/master/pokemon-gen7x/regular/charizard-mega-x.png",
+  });
+  expect(
+    resolvePokemonFormPokeSpriteAsset(metadata, pikachu, rockStar, true),
+  ).toMatchObject({
+    formKey: "rock-star",
+    shiny: true,
+    slug: "pikachu-rock-star",
+    url: "https://raw.githubusercontent.com/msikma/pokesprite/master/pokemon-gen7x/shiny/pikachu-rock-star.png",
+  });
 });
 
 test("keeps previous rendered Sprite only across same-species presentation changes", () => {

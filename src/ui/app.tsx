@@ -10,7 +10,11 @@ import {
   detailLoadSucceeded,
   type DetailState,
 } from "../app-state";
-import type { PokemonAbilityDetail, PokemonDetail } from "../pokemon-detail";
+import type {
+  PokemonAbilityDetail,
+  PokemonDetail,
+  PokemonForm,
+} from "../pokemon-detail";
 import {
   pokemonAbilityDetailsQueryOptions,
   pokemonDetailQueryOptions,
@@ -67,10 +71,10 @@ export function App({ initialQuery = "", onExit }: AppProps) {
   if (state.screen === "detail") {
     return (
       <DetailView
-        onLoadFailed={(species, error) => {
+        onLoadFailed={(species, form, error) => {
           setState((current) =>
             current.screen === "detail"
-              ? detailLoadFailed(current, species, error)
+              ? detailLoadFailed(current, species, error, form)
               : current,
           );
         }}
@@ -171,7 +175,11 @@ export function App({ initialQuery = "", onExit }: AppProps) {
 }
 
 type DetailViewProps = {
-  onLoadFailed: (species: DetailState["species"], error: unknown) => void;
+  onLoadFailed: (
+    species: DetailState["species"],
+    form: DetailState["form"],
+    error: unknown,
+  ) => void;
   onLoadSucceeded: (
     species: DetailState["species"],
     detail: PokemonDetail,
@@ -194,6 +202,7 @@ function DetailView({
   });
   usePokemonSpritePrefetch({
     enabled: state.status !== "error",
+    form: state.form,
     queryClient,
     shiny: state.shiny,
     species: state.species,
@@ -209,6 +218,7 @@ function DetailView({
         abilityViewerOpen={state.detailOverlay === "abilities"}
         detail={state.detail.detail}
         errorMessage={state.status === "error" ? state.errorMessage : undefined}
+        formSelectorSelectedIndex={getFormSelectorSelectedIndex(state)}
         loadedSpecies={state.detail.species}
         loadingSpecies={state.status === "loading" ? state.species : undefined}
         queryClient={queryClient}
@@ -260,7 +270,7 @@ function usePokemonDetailLoad({
 }: DetailViewProps) {
   const retryErrorUpdatedAt = useRef<number | undefined>(undefined);
   const detail = useQuery({
-    ...pokemonDetailQueryOptions(state.species, queryClient),
+    ...pokemonDetailQueryOptions(state.species, queryClient, state.form),
     enabled: state.status !== "error",
   });
 
@@ -286,7 +296,7 @@ function usePokemonDetailLoad({
       retryErrorUpdatedAt.current !== detail.errorUpdatedAt
     ) {
       retryErrorUpdatedAt.current = undefined;
-      onLoadFailed(state.species, detail.error);
+      onLoadFailed(state.species, state.form, detail.error);
     }
   }, [
     detail.error,
@@ -294,6 +304,7 @@ function usePokemonDetailLoad({
     detail.isError,
     detail.isFetching,
     onLoadFailed,
+    state.form,
     state.species,
     state.status,
   ]);
@@ -301,19 +312,28 @@ function usePokemonDetailLoad({
 
 function usePokemonSpritePrefetch({
   enabled,
+  form,
   queryClient,
   shiny,
   species,
 }: {
   enabled: boolean;
+  form: PokemonForm | undefined;
   queryClient: ReturnType<typeof useQueryClient>;
   shiny: boolean;
   species: SpeciesIndexEntry;
 }) {
   useQuery({
-    ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny),
+    ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
     enabled,
   });
+}
+
+function getFormSelectorSelectedIndex(state: DetailState): number | undefined {
+  return typeof state.detailOverlay === "object" &&
+    state.detailOverlay.kind === "forms"
+    ? state.detailOverlay.selectedIndex
+    : undefined;
 }
 
 function useDelayedVisibility(active: boolean, key: string): boolean {
@@ -507,6 +527,7 @@ type LoadedDetailViewProps = {
   abilityViewerOpen: boolean;
   detail: PokemonDetail;
   errorMessage: string | undefined;
+  formSelectorSelectedIndex: number | undefined;
   loadedSpecies: SpeciesIndexEntry;
   loadingSpecies: DetailState["species"] | undefined;
   queryClient: ReturnType<typeof useQueryClient>;
@@ -517,6 +538,7 @@ function LoadedDetailView({
   abilityViewerOpen,
   detail,
   errorMessage,
+  formSelectorSelectedIndex,
   loadedSpecies,
   loadingSpecies,
   queryClient,
@@ -573,6 +595,7 @@ function LoadedDetailView({
           >
             {shiny ? <PokemonSpriteShinyMarker /> : null}
             <PokemonSpritePanel
+              form={detail.form}
               queryClient={queryClient}
               shiny={shiny}
               species={loadedSpecies}
@@ -623,20 +646,66 @@ function LoadedDetailView({
           </DetailPanel>
         </box>
       </PokedexCard>
+      <DetailOverlays
+        abilityViewerOpen={abilityViewerOpen}
+        detail={detail}
+        formSelectorSelectedIndex={formSelectorSelectedIndex}
+        queryClient={queryClient}
+      />
+      <LoadedDetailFooter
+        hasAlternateForms={detail.forms.length > 1}
+        shiny={shiny}
+      />
+    </DetailScreen>
+  );
+}
+
+function DetailOverlays({
+  abilityViewerOpen,
+  detail,
+  formSelectorSelectedIndex,
+  queryClient,
+}: {
+  abilityViewerOpen: boolean;
+  detail: PokemonDetail;
+  formSelectorSelectedIndex: number | undefined;
+  queryClient: ReturnType<typeof useQueryClient>;
+}) {
+  return (
+    <>
       {abilityViewerOpen ? (
         <AbilityViewer abilities={detail.abilities} queryClient={queryClient} />
       ) : null}
-      <InstructionFooter>
-        <KeyHints
-          hints={[
-            { key: "a", action: "abilities" },
-            { key: "s", action: shiny ? "regular" : "shiny" },
-            { key: "/", action: "search" },
-            { key: "q/esc", action: "exit" },
-          ]}
+      {formSelectorSelectedIndex === undefined ? null : (
+        <FormSelector
+          currentForm={detail.form}
+          forms={detail.forms}
+          selectedIndex={formSelectorSelectedIndex}
         />
-      </InstructionFooter>
-    </DetailScreen>
+      )}
+    </>
+  );
+}
+
+function LoadedDetailFooter({
+  hasAlternateForms,
+  shiny,
+}: {
+  hasAlternateForms: boolean;
+  shiny: boolean;
+}) {
+  return (
+    <InstructionFooter>
+      <KeyHints
+        hints={[
+          { key: "a", action: "abilities" },
+          ...(hasAlternateForms ? [{ key: "f", action: "forms" }] : []),
+          { key: "s", action: shiny ? "regular" : "shiny" },
+          { key: "/", action: "search" },
+          { key: "q/esc", action: "exit" },
+        ]}
+      />
+    </InstructionFooter>
   );
 }
 
@@ -652,18 +721,20 @@ export function PokemonSpriteShinyMarker() {
 }
 
 type PokemonSpritePanelProps = {
+  form: PokemonForm | undefined;
   queryClient: ReturnType<typeof useQueryClient>;
   shiny: boolean;
   species: SpeciesIndexEntry;
 };
 
 function PokemonSpritePanel({
+  form,
   queryClient,
   shiny,
   species,
 }: PokemonSpritePanelProps) {
   const sprite = useQuery(
-    pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny),
+    pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
   );
 
   if (sprite.data !== undefined) {
@@ -806,6 +877,54 @@ function AbilityViewer({ abilities, queryClient }: AbilityViewerProps) {
       {abilityDetails.data?.map((ability) => (
         <AbilityDescription key={ability.name} ability={ability} />
       ))}
+    </Modal>
+  );
+}
+
+export function FormSelector({
+  currentForm,
+  forms,
+  selectedIndex,
+}: {
+  currentForm: PokemonForm;
+  forms: readonly PokemonForm[];
+  selectedIndex: number;
+}) {
+  return (
+    <Modal
+      right={
+        <KeyHints
+          hints={[
+            { key: "j/k", action: "move" },
+            { key: "enter", action: "select" },
+            { key: "esc", action: "close" },
+          ]}
+        />
+      }
+      rightWidth={keyHintsWidth([
+        { key: "j/k", action: "move" },
+        { key: "enter", action: "select" },
+        { key: "esc", action: "close" },
+      ])}
+      title="Forms"
+    >
+      {forms.map((form, index) => {
+        const selected = index === selectedIndex;
+        const current = form.pokemonName === currentForm.pokemonName;
+        const label = `${current ? "*" : " "} ${form.displayName}`;
+
+        return (
+          <text
+            key={form.pokemonName}
+            attributes={selected ? textStyles.selected : textStyles.normal}
+            {...(selected
+              ? { bg: colors.selected, fg: colors.selectedText }
+              : {})}
+          >
+            {selected ? label.padEnd(36) : label}
+          </text>
+        );
+      })}
     </Modal>
   );
 }

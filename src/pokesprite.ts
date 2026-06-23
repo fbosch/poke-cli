@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
+import type { PokemonForm } from "./pokemon-detail";
 import { queryCachePolicies } from "./query-cache";
 import type { SpeciesIndexEntry } from "./search";
 import { renderPngSpriteFile, type RenderedSprite } from "./sprite-rendering";
@@ -22,6 +23,7 @@ type ResourceQueryClient = Pick<QueryClient, "fetchQuery">;
 type PokeSpriteRenderedSpriteQueryKey = readonly [
   "pokesprite-rendered-sprite",
   dexNumber: number,
+  formKey: string,
   shiny: boolean,
 ];
 
@@ -113,23 +115,30 @@ export function pokespriteMetadataQueryOptions(
 export function pokespriteRenderedSpriteQueryKey(
   species: SpeciesIndexEntry,
   shiny = false,
+  form?: PokemonForm,
 ): PokeSpriteRenderedSpriteQueryKey {
-  return ["pokesprite-rendered-sprite", species.dexNumber, shiny];
+  return [
+    "pokesprite-rendered-sprite",
+    species.dexNumber,
+    form?.spriteFormKey ?? "$",
+    shiny,
+  ];
 }
 
 export function pokespriteRenderedSpriteQueryOptions(
   species: SpeciesIndexEntry,
   queryClient: ResourceQueryClient,
   shiny = false,
+  form?: PokemonForm,
 ) {
   return queryOptions({
-    queryKey: pokespriteRenderedSpriteQueryKey(species, shiny),
+    queryKey: pokespriteRenderedSpriteQueryKey(species, shiny, form),
     queryFn: async (): Promise<RenderedSprite> => {
       const metadata = await queryClient.fetchQuery(
         pokespriteMetadataQueryOptions(),
       );
       const asset = await cachePokeSpriteAsset(
-        resolveDefaultPokeSpriteAsset(metadata, species, shiny),
+        resolvePokemonFormPokeSpriteAsset(metadata, species, form, shiny),
       );
 
       return renderPngSpriteFile(asset.filePath);
@@ -139,6 +148,7 @@ export function pokespriteRenderedSpriteQueryOptions(
         previousData,
         previousQuery?.queryKey,
         species,
+        form,
       ),
     ...queryCachePolicies.pokespriteMetadata,
   });
@@ -148,10 +158,12 @@ export function pokespriteRenderedSpritePlaceholderData(
   previousData: RenderedSprite | undefined,
   previousQueryKey: readonly unknown[] | undefined,
   species: SpeciesIndexEntry,
+  form?: PokemonForm,
 ): RenderedSprite | undefined {
   if (
     previousQueryKey?.[0] !== "pokesprite-rendered-sprite" ||
-    previousQueryKey[1] !== species.dexNumber
+    previousQueryKey[1] !== species.dexNumber ||
+    previousQueryKey[2] !== (form?.spriteFormKey ?? "$")
   ) {
     return undefined;
   }
@@ -169,6 +181,20 @@ export function resolveDefaultPokeSpriteAsset(
   shiny = false,
 ): PokeSpriteAssetReference {
   return resolvePokeSpriteAsset(metadata, species, "$", shiny);
+}
+
+export function resolvePokemonFormPokeSpriteAsset(
+  metadata: PokeSpriteMetadata,
+  species: SpeciesIndexEntry,
+  form?: PokemonForm,
+  shiny = false,
+): PokeSpriteAssetReference {
+  return resolvePokeSpriteAsset(
+    metadata,
+    species,
+    form?.spriteFormKey ?? "$",
+    shiny,
+  );
 }
 
 export function resolvePokeSpriteAsset(

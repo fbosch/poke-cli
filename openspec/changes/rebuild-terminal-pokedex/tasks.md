@@ -67,11 +67,11 @@
 
 ## 9. Forms-Aware Detail
 
-- [ ] 9.1 Add PokeAPI species varieties loading and form identity normalization for Pokémon Forms.
-- [ ] 9.2 Add PokeSprite metadata mapping from Pokémon Forms to available regular and shiny Sprite assets.
-- [ ] 9.3 Add `f` key handling in Detail to open a form selector with `j/k`, arrows, Enter, and Escape behavior.
-- [ ] 9.4 Load form-specific `PokemonDetail` data and Sprite when a form is selected.
-- [ ] 9.5 Verify the slice with form list tests, Charizard and Pikachu form mapping fixtures, form selector state tests, and form-specific Detail mapping tests.
+- [x] 9.1 Add PokeAPI species varieties loading and form identity normalization for Pokémon Forms.
+- [x] 9.2 Add PokeSprite metadata mapping from Pokémon Forms to available regular and shiny Sprite assets.
+- [x] 9.3 Add `f` key handling in Detail to open a form selector with `j/k`, arrows, Enter, and Escape behavior.
+- [x] 9.4 Load form-specific `PokemonDetail` data and Sprite when a form is selected.
+- [x] 9.5 Verify the slice with form list tests, Charizard and Pikachu form mapping fixtures, form selector state tests, and form-specific Detail mapping tests.
 
 ## 10. Form Carryover
 

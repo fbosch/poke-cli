@@ -68,6 +68,13 @@ export const pikachuSpecies: PokeApiPokemonSpecies = {
         url: "https://pokeapi.co/api/v2/pokemon/25/",
       },
     },
+    {
+      is_default: false,
+      pokemon: {
+        name: "pikachu-rock-star",
+        url: "https://pokeapi.co/api/v2/pokemon/pikachu-rock-star/",
+      },
+    },
   ],
 };
 
@@ -114,6 +121,73 @@ export const pikachuPokemon: PokeApiPokemon = {
     },
   ],
   weight: 60,
+};
+
+export const pikachuRockStarPokemon: PokeApiPokemon = {
+  ...pikachuPokemon,
+  name: "pikachu-rock-star",
+};
+
+export const charizardSpecies: PokeApiPokemonSpecies = {
+  ...pikachuSpecies,
+  id: 6,
+  name: "charizard",
+  names: [
+    {
+      language: languageEnglish,
+      name: "Charizard",
+    },
+  ],
+  varieties: [
+    {
+      is_default: true,
+      pokemon: {
+        name: "charizard",
+        url: "https://pokeapi.co/api/v2/pokemon/6/",
+      },
+    },
+    {
+      is_default: false,
+      pokemon: {
+        name: "charizard-mega-x",
+        url: "https://pokeapi.co/api/v2/pokemon/charizard-mega-x/",
+      },
+    },
+    {
+      is_default: false,
+      pokemon: {
+        name: "charizard-mega-y",
+        url: "https://pokeapi.co/api/v2/pokemon/charizard-mega-y/",
+      },
+    },
+  ],
+};
+
+export const charizardMegaXPokemon: PokeApiPokemon = {
+  ...pikachuPokemon,
+  height: 17,
+  name: "charizard-mega-x",
+  species: {
+    name: "charizard",
+    url: "https://pokeapi.co/api/v2/pokemon-species/6/",
+  },
+  types: [
+    {
+      slot: 1,
+      type: {
+        name: "fire",
+        url: "https://pokeapi.co/api/v2/type/10/",
+      },
+    },
+    {
+      slot: 2,
+      type: {
+        name: "dragon",
+        url: "https://pokeapi.co/api/v2/type/16/",
+      },
+    },
+  ],
+  weight: 1105,
 };
 
 export const staticAbility: PokeApiAbility = {

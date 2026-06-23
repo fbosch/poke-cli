@@ -4,6 +4,7 @@ import { findExactSpecies } from "../src/search";
 import {
   DamageTakenPanel,
   DetailLoadingSkeleton,
+  FormSelector,
   PokemonSpriteArtwork,
   PokemonSpriteFallback,
   PokemonSpriteShinyMarker,
@@ -73,6 +74,39 @@ test("renders recoverable sprite-specific errors", () => {
 
 test("renders shiny Sprite marker", () => {
   const element = PokemonSpriteShinyMarker();
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+});
+
+test("renders form selector modal", () => {
+  const forms = [
+    {
+      displayName: "Pikachu (Default)",
+      isDefault: true,
+      pokemonName: "pikachu",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/25/",
+      spriteFormKey: "$",
+    },
+    {
+      displayName: "Pikachu Rock Star",
+      isDefault: false,
+      pokemonName: "pikachu-rock-star",
+      pokemonUrl: "https://pokeapi.co/api/v2/pokemon/pikachu-rock-star/",
+      spriteFormKey: "rock-star",
+    },
+  ];
+  const currentForm = forms[0];
+
+  if (currentForm === undefined) {
+    throw new Error("Missing current form fixture");
+  }
+
+  const element = FormSelector({
+    currentForm,
+    forms,
+    selectedIndex: 1,
+  });
 
   expect(element).toBeDefined();
   expect(isValidElement(element)).toBe(true);
