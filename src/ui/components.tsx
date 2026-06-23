@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { colors, textStyles } from "./design-tokens";
 
-export const detailCardWidth = 100;
-export const detailTitleWidth = 94;
+const detailCardWidth = 100;
+const detailTitleWidth = 94;
 
 const statBarWidth = 22;
 

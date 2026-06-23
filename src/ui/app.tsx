@@ -336,7 +336,6 @@ function LoadedDetailView({
                 width: 65,
               }}
             >
-              <text attributes={textStyles.active}>Overview</text>
               <text>{detail.flavorText}</text>
             </box>
             <box
@@ -345,7 +344,6 @@ function LoadedDetailView({
               borderStyle="rounded"
               style={{ flexDirection: "column", paddingX: 1, width: 65 }}
             >
-              <text attributes={textStyles.active}>Facts</text>
               <FactRow
                 label="Height"
                 value={`${detail.heightMeters.toFixed(1)} m`}
