@@ -136,13 +136,9 @@ export function App({ initialQuery = "", renderer }: AppProps) {
         ) : null}
       </box>
 
-      <text
-        fg={colors.muted}
-        attributes={textStyles.muted}
-        style={{ bottom: 1, position: "absolute" }}
-      >
+      <InstructionFooter>
         Type to filter | Shift-J/K move | Enter opens | Esc exits
-      </text>
+      </InstructionFooter>
     </box>
   );
 }
@@ -215,22 +211,36 @@ function DetailView({
 
   if (state.status === "loading") {
     return (
-      <box style={{ flexDirection: "column", padding: 1 }}>
+      <box
+        style={{
+          flexDirection: "column",
+          height: "100%",
+          padding: 1,
+          position: "relative",
+        }}
+      >
         <text>Terminal Pokedex</text>
         <text>Detail</text>
         <text>
           Loading #{state.species.dexNumbers[1] ?? state.species.dexNumbers[0]}{" "}
           {state.species.name}...
         </text>
-        <text>
-          Press / to return to Search. Press q, Escape, or Ctrl-C to exit.
-        </text>
+        <InstructionFooter>
+          Press / to return to Search | q/Esc exits
+        </InstructionFooter>
       </box>
     );
   }
 
   return (
-    <box style={{ flexDirection: "column", padding: 1 }}>
+    <box
+      style={{
+        flexDirection: "column",
+        height: "100%",
+        padding: 1,
+        position: "relative",
+      }}
+    >
       <text>Terminal Pokedex</text>
       <text>Detail</text>
       <text>Could not load Detail for {state.species.name}.</text>
@@ -238,7 +248,7 @@ function DetailView({
         {state.errorMessage ??
           "Detail data is unavailable. If offline, this species is not cached yet."}
       </text>
-      <text>Press r to retry, / to return to Search, or q to exit.</text>
+      <InstructionFooter>r retry | / Search | q/Esc exits</InstructionFooter>
     </box>
   );
 }
@@ -255,7 +265,14 @@ function LoadedDetailView({
   loadingSpecies,
 }: LoadedDetailViewProps) {
   return (
-    <box style={{ flexDirection: "column", padding: 1 }}>
+    <box
+      style={{
+        flexDirection: "column",
+        height: "100%",
+        padding: 1,
+        position: "relative",
+      }}
+    >
       <text>Terminal Pokedex</text>
       <text>Detail</text>
       {loadingSpecies !== undefined ? (
@@ -288,9 +305,21 @@ function LoadedDetailView({
       </text>
       <text>{detail.flavorText}</text>
       <text>Sprite: {detail.sprite.label}</text>
-      <text>
-        Press / to return to Search. Press q, Escape, or Ctrl-C to exit.
-      </text>
+      <InstructionFooter>
+        Press / to return to Search | q/Esc exits
+      </InstructionFooter>
     </box>
+  );
+}
+
+function InstructionFooter({ children }: { children: string }) {
+  return (
+    <text
+      fg={colors.muted}
+      attributes={textStyles.muted}
+      style={{ alignSelf: "center", bottom: 1, position: "absolute" }}
+    >
+      {children}
+    </text>
   );
 }
