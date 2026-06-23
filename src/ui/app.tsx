@@ -44,7 +44,6 @@ export function App({ initialQuery = "", renderer }: AppProps) {
     state.query.length === 0 ? "Search Pokemon species..." : state.query;
   const hasSearchableQuery =
     state.query.trim().length >= minimumSearchQueryLength;
-  const suggestionsHeight = 10;
 
   return (
     <box
@@ -54,6 +53,7 @@ export function App({ initialQuery = "", renderer }: AppProps) {
         justifyContent: "center",
         padding: 1,
         height: "100%",
+        position: "relative",
       }}
     >
       <box style={{ position: "relative", width: 56 }}>
@@ -82,18 +82,17 @@ export function App({ initialQuery = "", renderer }: AppProps) {
           <span fg={colors.indicatorGreen}>●</span>
           <span> Pokedex </span>
         </text>
-      </box>
-
-      <box
-        style={{
-          flexDirection: "column",
-          height: suggestionsHeight,
-          paddingTop: 2,
-          width: 56,
-        }}
-      >
         {hasSearchableQuery ? (
-          <>
+          <box
+            style={{
+              flexDirection: "column",
+              left: 0,
+              position: "absolute",
+              top: 3,
+              width: 56,
+              zIndex: 100,
+            }}
+          >
             {results.length === 0 ? (
               <text fg={colors.muted} attributes={textStyles.muted}>
                 No species match this query.
@@ -116,11 +115,15 @@ export function App({ initialQuery = "", renderer }: AppProps) {
                 </text>
               );
             })}
-          </>
+          </box>
         ) : null}
       </box>
 
-      <text fg={colors.muted} attributes={textStyles.muted}>
+      <text
+        fg={colors.muted}
+        attributes={textStyles.muted}
+        style={{ bottom: 1, position: "absolute" }}
+      >
         Type to filter | Shift-J/K move | Enter opens | Esc exits
       </text>
     </box>
