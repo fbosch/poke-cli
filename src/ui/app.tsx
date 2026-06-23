@@ -178,15 +178,75 @@ function DetailView({
   queryClient,
   state,
 }: DetailViewProps) {
-  const retryErrorUpdatedAt = useRef<number | undefined>(undefined);
-  const detail = useQuery({
-    ...pokemonDetailQueryOptions(state.species, queryClient),
-    enabled: state.status !== "error",
+  usePokemonDetailLoad({
+    onLoadFailed,
+    onLoadSucceeded,
+    queryClient,
+    state,
   });
   const showColdLoadingSkeleton = useDelayedVisibility(
     state.detail === undefined && state.status === "loading",
     state.species.slug,
   );
+
+  if (state.detail !== undefined) {
+    return (
+      <LoadedDetailView
+        abilityViewerOpen={state.detailOverlay === "abilities"}
+        detail={state.detail.detail}
+        errorMessage={state.status === "error" ? state.errorMessage : undefined}
+        loadingSpecies={state.status === "loading" ? state.species : undefined}
+        queryClient={queryClient}
+      />
+    );
+  }
+
+  if (state.status === "loading") {
+    return showColdLoadingSkeleton ? (
+      <DetailLoadingSkeleton species={state.species} />
+    ) : (
+      <DetailScreen>{null}</DetailScreen>
+    );
+  }
+
+  return (
+    <DetailScreen>
+      <PokedexCard>
+        <DetailCardTitle
+          left={`Could not load #${state.species.dexNumbers[1] ?? state.species.dexNumbers[0]} ${state.species.name}`}
+          right="Recoverable"
+        />
+        <box style={{ flexDirection: "column", gap: 1, padding: 1 }}>
+          <text fg={colors.muted} attributes={textStyles.muted}>
+            {state.errorMessage ??
+              "Detail data is unavailable. If offline, this species is not cached yet."}
+          </text>
+        </box>
+      </PokedexCard>
+      <InstructionFooter>
+        <KeyHints
+          hints={[
+            { key: "r", action: "retry" },
+            { key: "/", action: "search" },
+            { key: "q/esc", action: "exit" },
+          ]}
+        />
+      </InstructionFooter>
+    </DetailScreen>
+  );
+}
+
+function usePokemonDetailLoad({
+  onLoadFailed,
+  onLoadSucceeded,
+  queryClient,
+  state,
+}: DetailViewProps) {
+  const retryErrorUpdatedAt = useRef<number | undefined>(undefined);
+  const detail = useQuery({
+    ...pokemonDetailQueryOptions(state.species, queryClient),
+    enabled: state.status !== "error",
+  });
 
   useEffect(() => {
     if (detail.data !== undefined && state.status !== "ready") {
@@ -221,52 +281,6 @@ function DetailView({
     state.species,
     state.status,
   ]);
-
-  if (state.detail !== undefined) {
-    return (
-      <LoadedDetailView
-        abilityViewerOpen={state.detailOverlay === "abilities"}
-        detail={state.detail.detail}
-        errorMessage={state.status === "error" ? state.errorMessage : undefined}
-        loadingSpecies={state.status === "loading" ? state.species : undefined}
-        queryClient={queryClient}
-      />
-    );
-  }
-
-  if (state.status === "loading") {
-    if (!showColdLoadingSkeleton) {
-      return <DetailScreen>{null}</DetailScreen>;
-    }
-
-    return <DetailLoadingSkeleton species={state.species} />;
-  }
-
-  return (
-    <DetailScreen>
-      <PokedexCard>
-        <DetailCardTitle
-          left={`Could not load #${state.species.dexNumbers[1] ?? state.species.dexNumbers[0]} ${state.species.name}`}
-          right="Recoverable"
-        />
-        <box style={{ flexDirection: "column", gap: 1, padding: 1 }}>
-          <text fg={colors.muted} attributes={textStyles.muted}>
-            {state.errorMessage ??
-              "Detail data is unavailable. If offline, this species is not cached yet."}
-          </text>
-        </box>
-      </PokedexCard>
-      <InstructionFooter>
-        <KeyHints
-          hints={[
-            { key: "r", action: "retry" },
-            { key: "/", action: "search" },
-            { key: "q/esc", action: "exit" },
-          ]}
-        />
-      </InstructionFooter>
-    </DetailScreen>
-  );
 }
 
 function useDelayedVisibility(active: boolean, key: string): boolean {
@@ -348,27 +362,12 @@ export function DetailLoadingSkeleton({
             </box>
           </box>
           <box style={{ flexDirection: "column", width: 65 }}>
-            <box
-              border
-              borderColor={colors.panelSecondary}
-              borderStyle="rounded"
-              style={{
-                flexDirection: "column",
-                minHeight: 7,
-                paddingX: 1,
-                width: 65,
-              }}
-            >
+            <DetailPanel minHeight={7} width={65}>
               <SkeletonText width={58} />
               <SkeletonText width={52} />
               <SkeletonText width={44} />
-            </box>
-            <box
-              border
-              borderColor={colors.panelSecondary}
-              borderStyle="rounded"
-              style={{ flexDirection: "column", paddingX: 1, width: 65 }}
-            >
+            </DetailPanel>
+            <DetailPanel width={65}>
               {(
                 [
                   ["Species", 20],
@@ -381,16 +380,11 @@ export function DetailLoadingSkeleton({
               ).map(([label, width]) => (
                 <SkeletonFactRow key={label} label={label} width={width} />
               ))}
-            </box>
+            </DetailPanel>
           </box>
         </box>
         <box style={{ flexDirection: "row", gap: 1 }}>
-          <box
-            border
-            borderColor={colors.panelSecondary}
-            borderStyle="rounded"
-            style={{ flexDirection: "column", paddingX: 1, width: 45 }}
-          >
+          <DetailPanel width={45}>
             <text attributes={textStyles.active}>Stats</text>
             {[
               "HP",
@@ -406,20 +400,15 @@ export function DetailLoadingSkeleton({
                 <SkeletonLine width={20} />
               </text>
             ))}
-          </box>
-          <box
-            border
-            borderColor={colors.panelSecondary}
-            borderStyle="rounded"
-            style={{ flexDirection: "column", paddingX: 1, width: 50 }}
-          >
+          </DetailPanel>
+          <DetailPanel width={50}>
             <text attributes={textStyles.active}>Damage Taken</text>
             <SkeletonText width={38} />
             <SkeletonText width={28} />
             <text> </text>
             <SkeletonText width={34} />
             <SkeletonText width={24} />
-          </box>
+          </DetailPanel>
         </box>
       </PokedexCard>
       <InstructionFooter>
@@ -431,6 +420,32 @@ export function DetailLoadingSkeleton({
         />
       </InstructionFooter>
     </DetailScreen>
+  );
+}
+
+function DetailPanel({
+  children,
+  minHeight,
+  width,
+}: {
+  children: ReactNode;
+  minHeight?: number;
+  width: number;
+}) {
+  return (
+    <box
+      border
+      borderColor={colors.panelSecondary}
+      borderStyle="rounded"
+      style={{
+        flexDirection: "column",
+        ...(minHeight === undefined ? {} : { minHeight }),
+        paddingX: 1,
+        width,
+      }}
+    >
+      {children}
+    </box>
   );
 }
 
@@ -528,25 +543,10 @@ function LoadedDetailView({
             />
           </box>
           <box style={{ flexDirection: "column", width: 65 }}>
-            <box
-              border
-              borderColor={colors.panelSecondary}
-              borderStyle="rounded"
-              style={{
-                flexDirection: "column",
-                minHeight: 7,
-                paddingX: 1,
-                width: 65,
-              }}
-            >
+            <DetailPanel minHeight={7} width={65}>
               <text>{detail.flavorText}</text>
-            </box>
-            <box
-              border
-              borderColor={colors.panelSecondary}
-              borderStyle="rounded"
-              style={{ flexDirection: "column", paddingX: 1, width: 65 }}
-            >
+            </DetailPanel>
+            <DetailPanel width={65}>
               <FactRow label="Species" value={detail.species} />
               <FactRow label="Egg Group" value={detail.eggGroups.join(" / ")} />
               <FactRow
@@ -568,16 +568,11 @@ function LoadedDetailView({
                   value={`${ability.name}${ability.isHidden ? " (Hidden)" : ""}`}
                 />
               ))}
-            </box>
+            </DetailPanel>
           </box>
         </box>
         <box style={{ flexDirection: "row", gap: 1 }}>
-          <box
-            border
-            borderColor={colors.panelSecondary}
-            borderStyle="rounded"
-            style={{ flexDirection: "column", paddingX: 1, width: 45 }}
-          >
+          <DetailPanel width={45}>
             <text attributes={textStyles.active}>Stats</text>
             {detail.stats.map((stat) => (
               <text key={stat.name}>
@@ -586,15 +581,10 @@ function LoadedDetailView({
                 <StatBar name={stat.name} value={stat.base} />
               </text>
             ))}
-          </box>
-          <box
-            border
-            borderColor={colors.panelSecondary}
-            borderStyle="rounded"
-            style={{ flexDirection: "column", paddingX: 1, width: 50 }}
-          >
+          </DetailPanel>
+          <DetailPanel width={50}>
             <DamageTakenPanel damageTaken={detail.damageTaken} />
-          </box>
+          </DetailPanel>
         </box>
       </PokedexCard>
       {abilityViewerOpen ? (
