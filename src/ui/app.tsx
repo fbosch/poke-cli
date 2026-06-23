@@ -343,18 +343,13 @@ function LoadedDetailView({
               width: 30,
             }}
           >
-            <text attributes={textStyles.active}>Sprite</text>
             <box
               style={{
                 alignItems: "center",
                 flexGrow: 1,
                 justifyContent: "center",
               }}
-            >
-              <text fg={colors.muted} attributes={textStyles.muted}>
-                {detail.sprite.label}
-              </text>
-            </box>
+            />
           </box>
           <box style={{ flexDirection: "column", width: 65 }}>
             <box

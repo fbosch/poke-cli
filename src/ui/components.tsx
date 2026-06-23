@@ -62,7 +62,7 @@ export function PokedexHeader() {
       <span fg={colors.indicatorYellow}>●</span>
       <span> </span>
       <span fg={colors.indicatorGreen}>●</span>
-      <span> Pokedex </span>
+      <span> </span>
     </text>
   );
 }
