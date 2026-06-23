@@ -24,7 +24,7 @@ test("uses launch arguments as the initial Search query", () => {
   expect(getInitialSearchQuery(["mr", "mime"])).toBe("mr mime");
 });
 
-test("exact launch arguments open placeholder Detail", () => {
+test("exact launch arguments open Detail", () => {
   expect(createInitialAppState("pikachu")).toMatchObject({
     screen: "detail",
     species: {
@@ -102,7 +102,7 @@ test("ignores non-exit keys in the Search state", () => {
   expect(applyAppKey(state, { name: "tab" })).toBe(state);
 });
 
-test("Search opens placeholder Detail on Enter", () => {
+test("Search opens Detail on Enter", () => {
   const next = applyAppKey(createInitialAppState("pika"), { name: "enter" });
 
   expect(next).toMatchObject({

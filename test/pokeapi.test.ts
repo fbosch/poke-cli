@@ -1,6 +1,5 @@
-import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import { HttpResponse, http } from "msw";
-import { setupServer } from "msw/node";
 import { queryCachePolicies } from "../src/query-cache";
 import {
   canonicalPokeApiUrl,
@@ -8,12 +7,9 @@ import {
   pokeApiResourceQueryKey,
   pokeApiResourceQueryOptions,
 } from "../src/pokeapi";
+import { createMockServer, executeQuery } from "./support/query-test";
 
-const server = setupServer();
-
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+const server = createMockServer();
 
 test("canonicalizes PokeAPI resource URLs for stable query keys", () => {
   expect(canonicalPokeApiUrl("pokemon/pikachu?ignored=true#ignored")).toBe(
@@ -76,11 +72,3 @@ test("turns failed PokeAPI responses into boundary errors", async () => {
 
   await expect(executeQuery(options)).rejects.toThrow(PokeApiResourceError);
 });
-
-function executeQuery<T>(options: { queryFn?: unknown }): Promise<T> {
-  const queryFn = options.queryFn as (context: {
-    signal: AbortSignal;
-  }) => Promise<T>;
-
-  return queryFn({ signal: new AbortController().signal });
-}

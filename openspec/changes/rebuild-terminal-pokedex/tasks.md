@@ -30,10 +30,10 @@
 
 - [x] 4.1 Add persisted TanStack Query cache configuration with injectable test path and per-query cache policies.
 - [x] 4.2 Add PokeAPI resource query functions keyed by canonical URL without exposing raw responses outside the PokeAPI module.
-- [ ] 4.3 Add Zod schemas for consumed Pokémon, species, varieties, and evolution-chain fields.
-- [ ] 4.4 Add `PokemonDetail` model construction for a species Default Representative with name, National Dex number, types, abilities, height, weight, stats, deterministic flavor text, and Sprite reference placeholder.
-- [ ] 4.5 Render real Detail fields from `PokemonDetail` instead of placeholder Detail.
-- [ ] 4.6 Verify the slice with mocked PokeAPI tests, Zod boundary tests, cache TTL tests, `PokemonDetail` mapping tests, and exact-argument Detail smoke.
+- [x] 4.3 Add Zod schemas for consumed Pokémon, species, varieties, and evolution-chain fields.
+- [x] 4.4 Add `PokemonDetail` model construction for a species Default Representative with name, National Dex number, types, abilities, height, weight, stats, deterministic flavor text, and Sprite reference placeholder.
+- [x] 4.5 Render real Detail fields from `PokemonDetail` instead of placeholder Detail.
+- [x] 4.6 Verify the slice with mocked PokeAPI tests, Zod boundary tests, cache TTL tests, `PokemonDetail` mapping tests, and exact-argument Detail smoke.
 
 ## 5. Loading, Error, And Offline Behavior
 
