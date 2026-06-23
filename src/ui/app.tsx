@@ -14,6 +14,10 @@ import { pokemonDetailQueryOptions } from "../pokemon-detail";
 import { minimumSearchQueryLength, searchResults } from "../search";
 import { colors, textStyles } from "./design-tokens";
 
+const detailCardWidth = 100;
+const detailTitleWidth = 86;
+const statBarWidth = 22;
+
 type AppProps = {
   initialQuery?: string;
   onExit: () => void;
@@ -213,45 +217,47 @@ function DetailView({
 
   if (state.status === "loading") {
     return (
-      <box
-        style={{
-          flexDirection: "column",
-          height: "100%",
-          padding: 1,
-          position: "relative",
-        }}
-      >
-        <text>Terminal Pokedex</text>
-        <text>Detail</text>
-        <text>
-          Loading #{state.species.dexNumbers[1] ?? state.species.dexNumbers[0]}{" "}
-          {state.species.name}...
-        </text>
+      <DetailScreen>
+        <PokedexCard>
+          <DetailCardTitle
+            left={`Loading #${state.species.dexNumbers[1] ?? state.species.dexNumbers[0]} ${state.species.name}...`}
+            right="Detail"
+          />
+          <box
+            style={{
+              alignItems: "center",
+              height: 10,
+              justifyContent: "center",
+            }}
+          >
+            <text fg={colors.muted} attributes={textStyles.muted}>
+              Preparing Detail data...
+            </text>
+          </box>
+        </PokedexCard>
         <InstructionFooter>
           Press / to return to Search | q/Esc exits
         </InstructionFooter>
-      </box>
+      </DetailScreen>
     );
   }
 
   return (
-    <box
-      style={{
-        flexDirection: "column",
-        height: "100%",
-        padding: 1,
-        position: "relative",
-      }}
-    >
-      <text>Terminal Pokedex</text>
-      <text>Detail</text>
-      <text>Could not load Detail for {state.species.name}.</text>
-      <text fg={colors.muted} attributes={textStyles.muted}>
-        {state.errorMessage ??
-          "Detail data is unavailable. If offline, this species is not cached yet."}
-      </text>
+    <DetailScreen>
+      <PokedexCard>
+        <DetailCardTitle
+          left={`Could not load #${state.species.dexNumbers[1] ?? state.species.dexNumbers[0]} ${state.species.name}`}
+          right="Recoverable"
+        />
+        <box style={{ flexDirection: "column", gap: 1, padding: 1 }}>
+          <text fg={colors.muted} attributes={textStyles.muted}>
+            {state.errorMessage ??
+              "Detail data is unavailable. If offline, this species is not cached yet."}
+          </text>
+        </box>
+      </PokedexCard>
       <InstructionFooter>r retry | / Search | q/Esc exits</InstructionFooter>
-    </box>
+    </DetailScreen>
   );
 }
 
@@ -266,52 +272,276 @@ function LoadedDetailView({
   errorMessage,
   loadingSpecies,
 }: LoadedDetailViewProps) {
+  const abilityLabel = detail.abilities
+    .map((ability) => `${ability.name}${ability.isHidden ? " (Hidden)" : ""}`)
+    .join(", ");
+
+  return (
+    <DetailScreen>
+      <PokedexCard>
+        <DetailCardTitle
+          left={`#${detail.dexNumber.toString().padStart(3, "0")} ${detail.name}`}
+          right={<TypeLabels types={detail.types} />}
+          rightWidth={detail.types.join(" / ").length}
+        />
+        {loadingSpecies !== undefined ? (
+          <text fg={colors.muted} attributes={textStyles.muted}>
+            Loading next: #
+            {loadingSpecies.dexNumbers[1] ?? loadingSpecies.dexNumbers[0]}{" "}
+            {loadingSpecies.name}...
+          </text>
+        ) : null}
+        {errorMessage !== undefined ? (
+          <text fg={colors.muted} attributes={textStyles.muted}>
+            Could not load next Detail: {errorMessage}. Press r to retry or / to
+            search.
+          </text>
+        ) : null}
+        <box style={{ flexDirection: "row", gap: 1 }}>
+          <box
+            border
+            borderColor={colors.accent}
+            style={{
+              flexDirection: "column",
+              minHeight: 10,
+              paddingX: 1,
+              width: 30,
+            }}
+          >
+            <text attributes={textStyles.active}>Sprite</text>
+            <box
+              style={{
+                alignItems: "center",
+                flexGrow: 1,
+                justifyContent: "center",
+              }}
+            >
+              <text fg={colors.muted} attributes={textStyles.muted}>
+                {detail.sprite.label}
+              </text>
+            </box>
+          </box>
+          <box
+            border
+            borderColor={colors.accent}
+            style={{
+              flexDirection: "column",
+              gap: 1,
+              minHeight: 10,
+              paddingX: 1,
+              width: 61,
+            }}
+          >
+            <text attributes={textStyles.active}>Overview</text>
+            <text>{detail.flavorText}</text>
+            <text>
+              Height {detail.heightMeters.toFixed(1)} m | Weight{" "}
+              {detail.weightKilograms.toFixed(1)} kg
+            </text>
+            <text>Abilities {abilityLabel}</text>
+          </box>
+        </box>
+        <box style={{ flexDirection: "row", gap: 1 }}>
+          <box
+            border
+            borderColor={colors.accent}
+            style={{ flexDirection: "column", paddingX: 1, width: 45 }}
+          >
+            <text attributes={textStyles.active}>Stats</text>
+            {detail.stats.map((stat) => (
+              <text key={stat.name}>
+                <span>{stat.name.padEnd(11)}</span>
+                <span> {stat.base.toString().padStart(3)} </span>
+                <StatBar name={stat.name} value={stat.base} />
+              </text>
+            ))}
+          </box>
+          <box
+            border
+            borderColor={colors.accent}
+            style={{ flexDirection: "column", paddingX: 1, width: 46 }}
+          >
+            <text attributes={textStyles.active}>Damage Taken</text>
+            <text fg={colors.muted} attributes={textStyles.muted}>
+              Coming in the next slice.
+            </text>
+          </box>
+        </box>
+      </PokedexCard>
+      <InstructionFooter>
+        Press / to return to Search | q/Esc exits
+      </InstructionFooter>
+    </DetailScreen>
+  );
+}
+
+function DetailScreen({ children }: { children: React.ReactNode }) {
   return (
     <box
       style={{
+        alignItems: "center",
         flexDirection: "column",
         height: "100%",
+        justifyContent: "center",
         padding: 1,
         position: "relative",
       }}
     >
-      <text>Terminal Pokedex</text>
-      <text>Detail</text>
-      {loadingSpecies !== undefined ? (
-        <text fg={colors.muted} attributes={textStyles.muted}>
-          Loading #
-          {loadingSpecies.dexNumbers[1] ?? loadingSpecies.dexNumbers[0]}{" "}
-          {loadingSpecies.name}...
-        </text>
-      ) : null}
-      {errorMessage !== undefined ? (
-        <text fg={colors.muted} attributes={textStyles.muted}>
-          Could not load next Detail: {errorMessage}. Press r to retry or / to
-          search.
-        </text>
-      ) : null}
-      <text>
-        #{detail.dexNumber.toString().padStart(3, "0")} {detail.name}
-      </text>
-      <text>Types: {detail.types.join(" / ")}</text>
-      <text>
-        Abilities: {detail.abilities.map((ability) => ability.name).join(", ")}
-      </text>
-      <text>
-        Height: {detail.heightMeters.toFixed(1)} m | Weight:{" "}
-        {detail.weightKilograms.toFixed(1)} kg
-      </text>
-      <text>
-        Stats:{" "}
-        {detail.stats.map((stat) => `${stat.name} ${stat.base}`).join(" | ")}
-      </text>
-      <text>{detail.flavorText}</text>
-      <text>Sprite: {detail.sprite.label}</text>
-      <InstructionFooter>
-        Press / to return to Search | q/Esc exits
-      </InstructionFooter>
+      {children}
     </box>
   );
+}
+
+function PokedexCard({ children }: { children: React.ReactNode }) {
+  return (
+    <box
+      style={{
+        flexDirection: "column",
+        gap: 1,
+        position: "relative",
+        width: detailCardWidth,
+      }}
+    >
+      <box
+        border
+        borderColor={colors.accent}
+        style={{
+          flexDirection: "column",
+          gap: 1,
+          paddingX: 1,
+          width: detailCardWidth,
+        }}
+      >
+        {children}
+      </box>
+      <PokedexHeader />
+    </box>
+  );
+}
+
+function PokedexHeader() {
+  return (
+    <text
+      attributes={textStyles.active}
+      style={{ left: 2, position: "absolute", top: 0 }}
+    >
+      <span fg={colors.indicatorBlue}>⬤</span>
+      <span> </span>
+      <span fg={colors.indicatorRed}>●</span>
+      <span> </span>
+      <span fg={colors.indicatorYellow}>●</span>
+      <span> </span>
+      <span fg={colors.indicatorGreen}>●</span>
+      <span> Pokedex </span>
+    </text>
+  );
+}
+
+function DetailCardTitle({
+  left,
+  right,
+  rightWidth,
+}: {
+  left: string;
+  right: React.ReactNode;
+  rightWidth?: number;
+}) {
+  const resolvedRightWidth =
+    rightWidth ?? (typeof right === "string" ? right.length : 0);
+  const spacerWidth = Math.max(
+    1,
+    detailTitleWidth - left.length - resolvedRightWidth,
+  );
+
+  return (
+    <text attributes={textStyles.active}>
+      <span>{left}</span>
+      <span>{" ".repeat(spacerWidth)}</span>
+      {right}
+    </text>
+  );
+}
+
+function TypeLabels({ types }: { types: string[] }) {
+  return (
+    <span>
+      {types.map((type, index) => (
+        <span key={type}>
+          {index > 0 ? <span fg={colors.muted}> / </span> : null}
+          <span bg={typeColor(type)} fg={typeTextColor(type)}>
+            {` ${type} `}
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function StatBar({ name, value }: { name: string; value: number }) {
+  const filled = Math.max(1, Math.min(statBarWidth, Math.round(value / 8)));
+  const empty = statBarWidth - filled;
+
+  return (
+    <span>
+      <span fg={statColor(name)}>{"━".repeat(filled)}</span>
+      <span fg={colors.statEmpty}>{"━".repeat(empty)}</span>
+    </span>
+  );
+}
+
+function statColor(name: string) {
+  const statColors: Record<string, (typeof colors)[keyof typeof colors]> = {
+    Attack: colors.statAttack,
+    Defense: colors.statDefense,
+    HP: colors.statHp,
+    "Sp. Attack": colors.statSpecialAttack,
+    "Sp. Defense": colors.statSpecialDefense,
+    Speed: colors.statSpeed,
+  };
+
+  return statColors[name] ?? colors.muted;
+}
+
+function typeColor(type: string) {
+  const typeColors: Record<string, (typeof colors)[keyof typeof colors]> = {
+    Bug: colors.typeBug,
+    Dark: colors.typeDark,
+    Dragon: colors.typeDragon,
+    Electric: colors.typeElectric,
+    Fairy: colors.typeFairy,
+    Fighting: colors.typeFighting,
+    Fire: colors.typeFire,
+    Flying: colors.typeFlying,
+    Ghost: colors.typeGhost,
+    Grass: colors.typeGrass,
+    Ground: colors.typeGround,
+    Ice: colors.typeIce,
+    Normal: colors.typeNormal,
+    Poison: colors.typePoison,
+    Psychic: colors.typePsychic,
+    Rock: colors.typeRock,
+    Steel: colors.typeSteel,
+    Water: colors.typeWater,
+  };
+
+  return typeColors[type] ?? colors.muted;
+}
+
+function typeTextColor(type: string) {
+  const lightTextTypes = new Set([
+    "Dark",
+    "Dragon",
+    "Fighting",
+    "Fire",
+    "Ghost",
+    "Poison",
+    "Psychic",
+    "Water",
+  ]);
+
+  return lightTextTypes.has(type)
+    ? colors.typeTagTextLight
+    : colors.typeTagTextDark;
 }
 
 function InstructionFooter({ children }: { children: string }) {
