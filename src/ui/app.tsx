@@ -1,4 +1,4 @@
-import type { CliRenderer, KeyEvent } from "@opentui/core";
+import type { KeyEvent } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -16,22 +16,24 @@ import { colors, textStyles } from "./design-tokens";
 
 type AppProps = {
   initialQuery?: string;
-  renderer: CliRenderer;
+  onExit: () => void;
 };
 
-export function App({ initialQuery = "", renderer }: AppProps) {
+export function App({ initialQuery = "", onExit }: AppProps) {
   const [state, setState] = useState(() => createInitialAppState(initialQuery));
   const queryClient = useQueryClient();
 
   useKeyboard((key: KeyEvent) => {
     setState((current) => {
-      const next = applyAppKey(current, key);
-      if (next.shouldExit) {
-        renderer.destroy();
-      }
-      return next;
+      return applyAppKey(current, key);
     });
   });
+
+  useEffect(() => {
+    if (state.shouldExit) {
+      onExit();
+    }
+  }, [onExit, state.shouldExit]);
 
   if (state.screen === "detail") {
     return (

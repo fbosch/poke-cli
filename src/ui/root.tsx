@@ -1,4 +1,3 @@
-import type { CliRenderer } from "@opentui/core";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import {
   createAppQueryClient,
@@ -13,10 +12,10 @@ const persister = createQueryPersister();
 
 type RootProps = {
   initialQuery?: string;
-  renderer: CliRenderer;
+  onExit: () => void;
 };
 
-export function Root({ initialQuery = "", renderer }: RootProps) {
+export function Root({ initialQuery = "", onExit }: RootProps) {
   return (
     <PersistQueryClientProvider
       client={queryClient}
@@ -26,7 +25,7 @@ export function Root({ initialQuery = "", renderer }: RootProps) {
         persister,
       }}
     >
-      <App initialQuery={initialQuery} renderer={renderer} />
+      <App initialQuery={initialQuery} onExit={onExit} />
     </PersistQueryClientProvider>
   );
 }

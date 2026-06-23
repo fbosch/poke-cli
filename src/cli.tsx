@@ -22,9 +22,23 @@ export async function main(args = Bun.argv.slice(2)): Promise<void> {
   const renderer = await createCliRenderer({
     exitOnCtrlC: false,
   });
+  const root = createRoot(renderer);
+  let hasExited = false;
 
-  createRoot(renderer).render(
-    <Root initialQuery={initialQuery} renderer={renderer} />,
+  root.render(
+    <Root
+      initialQuery={initialQuery}
+      onExit={() => {
+        if (hasExited) {
+          return;
+        }
+
+        hasExited = true;
+        root.unmount();
+        renderer.destroy();
+        setTimeout(() => process.exit(0), 0);
+      }}
+    />,
   );
 }
 
