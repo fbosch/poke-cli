@@ -646,7 +646,7 @@ export function PokemonSpriteShinyMarker() {
       fg={colors.accent}
       style={{ position: "absolute", right: 1, top: 0, zIndex: 1 }}
     >
-      *
+      ★
     </text>
   );
 }
