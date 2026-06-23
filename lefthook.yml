@@ -9,13 +9,6 @@ pre-commit:
 
 pre-push:
   commands:
-    typecheck:
-      glob:
-        - "*.{ts,tsx}"
-        - "package.json"
-        - "bun.lock"
-        - "tsconfig.json"
-      run: bun run typecheck
     typecheck-native:
       glob:
         - "*.{ts,tsx}"

@@ -22,11 +22,11 @@
     "lint-staged": "lint-staged",
     "hooks:install": "lefthook install",
     "smoke:binary": "bun run scripts/smoke-binary.ts",
-    "check": "bun run format:check && bun run lint && bun run typecheck && bun test && bun run verify:index && bun run build && bun run fallow",
+    "check": "bun run format:check && bun run lint && bun run typecheck:native && bun test && bun run verify:index && bun run build && bun run fallow",
     "generate:index": "bun run scripts/generate-index.ts",
     "generate:pokeapi-types": "openapi-typescript https://raw.githubusercontent.com/PokeAPI/pokeapi/master/openapi.yml -o src/pokeapi/generated.ts && biome format --write src/pokeapi/generated.ts",
     "verify:index": "bun run scripts/verify-index.ts",
-    "ci": "bun run check && bun run typecheck:native && bun run smoke:binary",
+    "ci": "bun run check && bun run smoke:binary",
     "openspec": "openspec"
   },
   "devDependencies": {
