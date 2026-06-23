@@ -43,7 +43,7 @@ test("ambiguous launch arguments open prefilled Search", () => {
 });
 
 test("Search selection moves with Shift-J and Shift-K", () => {
-  const selected = applyAppKey(createInitialAppState(), {
+  const selected = applyAppKey(createInitialAppState("nidoran"), {
     name: "j",
     shift: true,
   });
@@ -55,6 +55,20 @@ test("Search selection moves with Shift-J and Shift-K", () => {
   });
   expect(reset).toMatchObject({
     screen: "search",
+    query: "nidoran",
+    selectedIndex: 0,
+  });
+});
+
+test("Search selection waits for enough query input", () => {
+  const selected = applyAppKey(createInitialAppState("pi"), {
+    name: "j",
+    shift: true,
+  });
+
+  expect(selected).toMatchObject({
+    screen: "search",
+    query: "pi",
     selectedIndex: 0,
   });
 });

@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { findExactSpecies, searchSpecies } from "../src/search";
+import {
+  findExactSpecies,
+  minimumSearchQueryLength,
+  searchSpecies,
+} from "../src/search";
 
 test.each([
   { query: "pikachu", slug: "pikachu" },
@@ -15,4 +19,11 @@ test("exact species matching excludes fuzzy aliases", () => {
   expect(findExactSpecies("pikachu")?.slug).toBe("pikachu");
   expect(findExactSpecies("025")?.slug).toBe("pikachu");
   expect(findExactSpecies("pika")).toBeUndefined();
+});
+
+test("search waits for a few input characters", () => {
+  expect(minimumSearchQueryLength).toBe(3);
+  expect(searchSpecies("")).toEqual([]);
+  expect(searchSpecies("pi")).toEqual([]);
+  expect(searchSpecies("pik")[0]?.slug).toBe("pikachu");
 });

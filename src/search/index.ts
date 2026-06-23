@@ -24,10 +24,12 @@ const fuse = new Fuse(speciesIndex, {
   threshold: 0.35,
 });
 
+export const minimumSearchQueryLength = 3;
+
 export function searchSpecies(query: string, limit = 10): SpeciesIndexEntry[] {
   const normalizedQuery = query.trim();
-  if (normalizedQuery.length === 0) {
-    return speciesIndex.slice(0, limit);
+  if (normalizedQuery.length < minimumSearchQueryLength) {
+    return [];
   }
 
   return fuse.search(normalizedQuery, { limit }).map((result) => result.item);

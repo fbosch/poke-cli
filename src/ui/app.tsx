@@ -1,8 +1,8 @@
-import { TextAttributes, type CliRenderer, type KeyEvent } from "@opentui/core";
+import type { CliRenderer, KeyEvent } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useState } from "react";
 import { applyAppKey, createInitialAppState } from "../app-state";
-import { searchResults } from "../search";
+import { minimumSearchQueryLength, searchResults } from "../search";
 import { colors, textStyles } from "./design-tokens";
 
 type AppProps = {
@@ -42,6 +42,9 @@ export function App({ initialQuery = "", renderer }: AppProps) {
   const results = searchResults(state.query, state.selectedIndex);
   const queryLabel =
     state.query.length === 0 ? "Search Pokemon species..." : state.query;
+  const hasSearchableQuery =
+    state.query.trim().length >= minimumSearchQueryLength;
+  const suggestionsHeight = 10;
 
   return (
     <box
@@ -50,6 +53,7 @@ export function App({ initialQuery = "", renderer }: AppProps) {
         flexDirection: "column",
         justifyContent: "center",
         padding: 1,
+        height: "100%",
       }}
     >
       <box style={{ position: "relative", width: 56 }}>
@@ -81,27 +85,39 @@ export function App({ initialQuery = "", renderer }: AppProps) {
       </box>
 
       <box
-        border
-        borderColor={colors.accent}
-        style={{ flexDirection: "column", paddingX: 1, width: 56 }}
+        style={{
+          flexDirection: "column",
+          height: suggestionsHeight,
+          paddingTop: 2,
+          width: 56,
+        }}
       >
-        {results.length === 0 ? (
-          <text fg={colors.muted} attributes={textStyles.muted}>
-            No species match this query.
-          </text>
+        {hasSearchableQuery ? (
+          <>
+            {results.length === 0 ? (
+              <text fg={colors.muted} attributes={textStyles.muted}>
+                No species match this query.
+              </text>
+            ) : null}
+            {results.map((result) => {
+              const label = ` #${result.dexNumbers[1] ?? result.dexNumbers[0]} ${result.name}`;
+
+              return (
+                <text
+                  key={result.slug}
+                  attributes={
+                    result.selected ? textStyles.selected : textStyles.normal
+                  }
+                  {...(result.selected
+                    ? { bg: colors.selected, fg: colors.selectedText }
+                    : {})}
+                >
+                  {result.selected ? label.padEnd(56) : label}
+                </text>
+              );
+            })}
+          </>
         ) : null}
-        {results.map((result) => (
-          <text
-            key={result.slug}
-            attributes={
-              result.selected ? textStyles.selected : textStyles.normal
-            }
-            {...(result.selected ? { fg: colors.selected } : {})}
-          >
-            {result.selected ? ">" : " "} #
-            {result.dexNumbers[1] ?? result.dexNumbers[0]} {result.name}
-          </text>
-        ))}
       </box>
 
       <text fg={colors.muted} attributes={textStyles.muted}>

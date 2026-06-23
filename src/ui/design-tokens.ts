@@ -7,12 +7,13 @@ export const colors = {
   indicatorRed: RGBA.fromIndex(1),
   indicatorYellow: RGBA.fromIndex(3),
   selected: RGBA.fromIndex(4),
-  muted: RGBA.fromIndex(8),
+  selectedText: RGBA.fromIndex(0),
+  muted: RGBA.fromIndex(7),
 } as const;
 
 export const textStyles = {
   active: TextAttributes.BOLD,
-  muted: TextAttributes.DIM,
+  muted: TextAttributes.NONE,
   normal: TextAttributes.NONE,
   selected: TextAttributes.BOLD,
 } as const;
