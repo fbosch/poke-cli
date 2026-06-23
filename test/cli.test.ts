@@ -124,6 +124,19 @@ test("lowercase Vim keys remain Search input", () => {
   });
 });
 
+test("s remains Search text input", () => {
+  const next = applyAppKey(createInitialAppState(), {
+    name: "s",
+    sequence: "s",
+  });
+
+  expect(next).toMatchObject({
+    screen: "search",
+    query: "s",
+    selectedIndex: 0,
+  });
+});
+
 test.each([
   { key: { name: "q" }, label: "q" },
   { key: { name: "escape" }, label: "Escape" },
@@ -157,7 +170,29 @@ test("Detail starts in loading state before data is ready", () => {
     screen: "detail",
     detail: undefined,
     retryToken: 0,
+    shiny: false,
     status: "loading",
+  });
+});
+
+test("Detail toggles shiny Sprite presentation without changing identity", () => {
+  const state = loadedPikachuDetailState();
+  const shiny = applyAppKey(state, { name: "s" });
+  const regular = applyAppKey(shiny, { name: "s" });
+
+  expect(shiny).toMatchObject({
+    screen: "detail",
+    detail: {
+      detail: pikachuDetail,
+      species: { slug: "pikachu" },
+    },
+    shiny: true,
+    species: { slug: "pikachu" },
+  });
+  expect(regular).toMatchObject({
+    screen: "detail",
+    shiny: false,
+    species: { slug: "pikachu" },
   });
 });
 

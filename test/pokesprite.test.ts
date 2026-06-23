@@ -9,6 +9,8 @@ import {
   PokeSpriteResourceError,
   pokespriteMetadataQueryKey,
   pokespriteMetadataQueryOptions,
+  pokespriteRenderedSpritePlaceholderData,
+  pokespriteRenderedSpriteQueryKey,
   pokeSpriteAssetCachePath,
   resolveDefaultPokeSpriteAsset,
   resolvePokeSpriteAsset,
@@ -124,6 +126,43 @@ test("resolves form aliases and shiny asset URLs", () => {
     slug: "raticate-alola",
     url: "https://raw.githubusercontent.com/msikma/pokesprite/master/pokemon-gen7x/shiny/raticate-alola.png",
   });
+});
+
+test("keys rendered Sprite cache by dex number and shiny state", () => {
+  const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
+
+  expect(pokespriteRenderedSpriteQueryKey(pikachu)).toEqual([
+    "pokesprite-rendered-sprite",
+    25,
+    false,
+  ]);
+  expect(pokespriteRenderedSpriteQueryKey(pikachu, true)).toEqual([
+    "pokesprite-rendered-sprite",
+    25,
+    true,
+  ]);
+});
+
+test("keeps previous rendered Sprite only across same-species presentation changes", () => {
+  const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
+  const bulbasaur =
+    findExactSpecies("bulbasaur") ?? throwMissingSpecies("bulbasaur");
+  const renderedSprite = { height: 0, rows: [], width: 0 };
+
+  expect(
+    pokespriteRenderedSpritePlaceholderData(
+      renderedSprite,
+      pokespriteRenderedSpriteQueryKey(pikachu),
+      pikachu,
+    ),
+  ).toBe(renderedSprite);
+  expect(
+    pokespriteRenderedSpritePlaceholderData(
+      renderedSprite,
+      pokespriteRenderedSpriteQueryKey(bulbasaur),
+      pikachu,
+    ),
+  ).toBeUndefined();
 });
 
 test("fails concisely when requested Gen 7x sprite metadata is missing", () => {

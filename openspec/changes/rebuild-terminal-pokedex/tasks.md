@@ -60,10 +60,10 @@
 
 ## 8. Shiny Sprite Toggle
 
-- [ ] 8.1 Add Detail state for regular versus Shiny Sprite presentation.
-- [ ] 8.2 Add `s` key handling in Detail only to toggle Shiny Sprite presentation.
-- [ ] 8.3 Resolve and cache the shiny PokeSprite asset for the current Pokémon Form without changing species or form identity.
-- [ ] 8.4 Verify the slice with state transition tests, regular/shiny cache-key tests, and Detail keymap tests.
+- [x] 8.1 Add Detail state for regular versus Shiny Sprite presentation.
+- [x] 8.2 Add `s` key handling in Detail only to toggle Shiny Sprite presentation.
+- [x] 8.3 Resolve and cache the shiny PokeSprite asset for the current Pokémon Form without changing species or form identity.
+- [x] 8.4 Verify the slice with state transition tests, regular/shiny cache-key tests, and Detail keymap tests.
 
 ## 9. Forms-Aware Detail
 

@@ -110,7 +110,7 @@ export function pokespriteMetadataQueryOptions(
   });
 }
 
-function pokespriteRenderedSpriteQueryKey(
+export function pokespriteRenderedSpriteQueryKey(
   species: SpeciesIndexEntry,
   shiny = false,
 ): PokeSpriteRenderedSpriteQueryKey {
@@ -134,8 +134,29 @@ export function pokespriteRenderedSpriteQueryOptions(
 
       return renderPngSpriteFile(asset.filePath);
     },
+    placeholderData: (previousData, previousQuery) =>
+      pokespriteRenderedSpritePlaceholderData(
+        previousData,
+        previousQuery?.queryKey,
+        species,
+      ),
     ...queryCachePolicies.pokespriteMetadata,
   });
+}
+
+export function pokespriteRenderedSpritePlaceholderData(
+  previousData: RenderedSprite | undefined,
+  previousQueryKey: readonly unknown[] | undefined,
+  species: SpeciesIndexEntry,
+): RenderedSprite | undefined {
+  if (
+    previousQueryKey?.[0] !== "pokesprite-rendered-sprite" ||
+    previousQueryKey[1] !== species.dexNumber
+  ) {
+    return undefined;
+  }
+
+  return previousData;
 }
 
 export function parsePokeSpriteMetadata(resource: unknown): PokeSpriteMetadata {

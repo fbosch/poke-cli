@@ -195,6 +195,7 @@ function DetailView({
   usePokemonSpritePrefetch({
     enabled: state.status !== "error",
     queryClient,
+    shiny: state.shiny,
     species: state.species,
   });
   const showColdLoadingSkeleton = useDelayedVisibility(
@@ -211,6 +212,7 @@ function DetailView({
         loadedSpecies={state.detail.species}
         loadingSpecies={state.status === "loading" ? state.species : undefined}
         queryClient={queryClient}
+        shiny={state.shiny}
       />
     );
   }
@@ -300,14 +302,16 @@ function usePokemonDetailLoad({
 function usePokemonSpritePrefetch({
   enabled,
   queryClient,
+  shiny,
   species,
 }: {
   enabled: boolean;
   queryClient: ReturnType<typeof useQueryClient>;
+  shiny: boolean;
   species: SpeciesIndexEntry;
 }) {
   useQuery({
-    ...pokespriteRenderedSpriteQueryOptions(species, queryClient),
+    ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny),
     enabled,
   });
 }
@@ -506,6 +510,7 @@ type LoadedDetailViewProps = {
   loadedSpecies: SpeciesIndexEntry;
   loadingSpecies: DetailState["species"] | undefined;
   queryClient: ReturnType<typeof useQueryClient>;
+  shiny: boolean;
 };
 
 function LoadedDetailView({
@@ -515,6 +520,7 @@ function LoadedDetailView({
   loadedSpecies,
   loadingSpecies,
   queryClient,
+  shiny,
 }: LoadedDetailViewProps) {
   return (
     <DetailScreen>
@@ -561,11 +567,14 @@ function LoadedDetailView({
               height: detailSpritePanelHeight,
               justifyContent: "center",
               paddingX: 1,
+              position: "relative",
               width: detailSpritePanelWidth,
             }}
           >
+            {shiny ? <PokemonSpriteShinyMarker /> : null}
             <PokemonSpritePanel
               queryClient={queryClient}
+              shiny={shiny}
               species={loadedSpecies}
             />
           </box>
@@ -621,6 +630,7 @@ function LoadedDetailView({
         <KeyHints
           hints={[
             { key: "a", action: "abilities" },
+            { key: "s", action: shiny ? "regular" : "shiny" },
             { key: "/", action: "search" },
             { key: "q/esc", action: "exit" },
           ]}
@@ -630,14 +640,30 @@ function LoadedDetailView({
   );
 }
 
+export function PokemonSpriteShinyMarker() {
+  return (
+    <text
+      fg={colors.accent}
+      style={{ position: "absolute", right: 1, top: 0, zIndex: 1 }}
+    >
+      *
+    </text>
+  );
+}
+
 type PokemonSpritePanelProps = {
   queryClient: ReturnType<typeof useQueryClient>;
+  shiny: boolean;
   species: SpeciesIndexEntry;
 };
 
-function PokemonSpritePanel({ queryClient, species }: PokemonSpritePanelProps) {
+function PokemonSpritePanel({
+  queryClient,
+  shiny,
+  species,
+}: PokemonSpritePanelProps) {
   const sprite = useQuery(
-    pokespriteRenderedSpriteQueryOptions(species, queryClient),
+    pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny),
   );
 
   if (sprite.data !== undefined) {

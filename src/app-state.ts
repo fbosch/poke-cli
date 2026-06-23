@@ -22,6 +22,7 @@ export type DetailState = {
   detailOverlay: "abilities" | undefined;
   errorMessage: string | undefined;
   retryToken: number;
+  shiny: boolean;
   species: SpeciesIndexEntry;
   status: "loading" | "ready" | "error";
   shouldExit: boolean;
@@ -61,6 +62,7 @@ export function createInitialAppState(query = ""): AppState {
       errorMessage: undefined,
       previousQuery: "",
       retryToken: 0,
+      shiny: false,
       species: exactSpecies,
       status: "loading",
       shouldExit: false,
@@ -118,7 +120,18 @@ function applyDetailKey(state: DetailState, key: AppKey): AppState {
     return retryDetailLoad(state);
   }
 
+  if (key.name === "s") {
+    return toggleDetailShiny(state);
+  }
+
   return state;
+}
+
+function toggleDetailShiny(state: DetailState): DetailState {
+  return {
+    ...state,
+    shiny: state.shiny === false,
+  };
 }
 
 function openDetailOverlay(
@@ -247,6 +260,7 @@ function openSelectedSpecies(state: SearchState): AppState {
     errorMessage: undefined,
     previousQuery: state.query,
     retryToken: 0,
+    shiny: false,
     species,
     status: "loading",
     shouldExit: false,
