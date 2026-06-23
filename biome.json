@@ -14,5 +14,13 @@
     "rules": {
       "preset": "recommended"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/pokeapi/schema.compiled.ts"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
 }

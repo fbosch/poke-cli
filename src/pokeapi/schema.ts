@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { components } from "./generated";
+import { z } from "zod";
 
 type GeneratedPokemon = components["schemas"]["PokemonDetail"];
 type GeneratedSpecies = components["schemas"]["PokemonSpeciesDetail"];
@@ -61,7 +61,7 @@ const pokemonStatSchema = z.object({
   stat: namedResourceSchema,
 });
 
-const pokemonResourceSchema = z.object({
+export const pokemonResourceSchema = z.object({
   abilities: z.array(pokemonAbilitySchema),
   height: z.number(),
   name: z.string(),
@@ -71,7 +71,7 @@ const pokemonResourceSchema = z.object({
   weight: z.number(),
 });
 
-const pokemonSpeciesResourceSchema = z.object({
+export const pokemonSpeciesResourceSchema = z.object({
   evolution_chain: z.object({ url: z.string() }),
   flavor_text_entries: z.array(
     z.object({
@@ -108,23 +108,23 @@ const evolutionChainNodeSchema: z.ZodType<EvolutionChainNode> = z.lazy(() =>
   }),
 );
 
-const evolutionChainResourceSchema = z.object({
+export const evolutionChainResourceSchema = z.object({
   chain: evolutionChainNodeSchema,
   id: z.number(),
 });
 
 export function parsePokemonResource(resource: unknown): PokeApiPokemon {
-  return pokemonResourceSchema.parse(resource);
+  return pokemonResourceSchema.parse(resource) as PokeApiPokemon;
 }
 
 export function parsePokemonSpeciesResource(
   resource: unknown,
 ): PokeApiPokemonSpecies {
-  return pokemonSpeciesResourceSchema.parse(resource);
+  return pokemonSpeciesResourceSchema.parse(resource) as PokeApiPokemonSpecies;
 }
 
 export function parseEvolutionChainResource(
   resource: unknown,
 ): PokeApiEvolutionChain {
-  return evolutionChainResourceSchema.parse(resource);
+  return evolutionChainResourceSchema.parse(resource) as PokeApiEvolutionChain;
 }

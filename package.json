@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "bun run src/cli.tsx",
-    "build": "bun build src/cli.tsx --compile --outfile dist/pokedex --target bun-linux-x64",
+    "build": "bun run scripts/build.ts",
     "test": "bun test",
     "test:related": "bun test",
     "typecheck": "tsc --noEmit",
@@ -16,6 +16,7 @@
     "lint": "biome lint .",
     "fallow": "fallow --summary",
     "fallow:audit": "fallow audit --quiet",
+    "benchmark:validation": "bun run scripts/benchmark-pokeapi-validation.ts",
     "commitlint": "commitlint",
     "lint-staged": "lint-staged",
     "hooks:install": "lefthook install",
@@ -49,7 +50,7 @@
     "@tanstack/react-query-persist-client": "^5.101.0",
     "fuse.js": "^7.4.2",
     "react": "^19.2.7",
-    "zod": "^4.4.3"
+    "zod": "4.3.6"
   },
   "trustedDependencies": [
     "@fission-ai/openspec",
