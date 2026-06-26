@@ -10,6 +10,7 @@ import {
   detailLoadFailed,
   detailLoadSucceeded,
   loadAdjacentDetailSpecies,
+  loadDetailSpecies,
   type DetailNavigationDelta,
   type DetailState,
 } from "../app-state";
@@ -19,7 +20,11 @@ import {
   pokemonDetailQueryOptions,
 } from "../pokemon-detail";
 import { pokespriteRenderedSpriteQueryOptions } from "../pokesprite";
-import { getSpeciesByDexDelta, type SpeciesIndexEntry } from "../search";
+import {
+  findExactSpecies,
+  getSpeciesByDexDelta,
+  type SpeciesIndexEntry,
+} from "../search";
 import {
   DetailCardTitle,
   DetailScreen,
@@ -92,6 +97,18 @@ export function App({ initialQuery = "", onExit }: AppProps) {
               : current,
           );
         }}
+        onSelectSpecies={(name) => {
+          const species = findExactSpecies(name);
+          if (species === undefined) {
+            return;
+          }
+
+          setState((current) =>
+            current.screen === "detail"
+              ? loadDetailSpecies(current, species)
+              : current,
+          );
+        }}
         state={state}
       />
     );
@@ -113,6 +130,7 @@ type DetailViewProps = {
     detail: PokemonDetail,
   ) => void;
   onNavigate: (delta: DetailNavigationDelta) => void;
+  onSelectSpecies: (name: string) => void;
   state: DetailState;
 };
 
@@ -131,6 +149,7 @@ function DetailView({
   onLoadFailed,
   onLoadSucceeded,
   onNavigate,
+  onSelectSpecies,
   state,
 }: DetailViewProps) {
   usePokemonDetailLoad({
@@ -167,6 +186,7 @@ function DetailView({
         loadedSpecies={state.detail.species}
         navigationSpecies={state.species}
         onNavigate={onNavigate}
+        onSelectSpecies={onSelectSpecies}
         shiny={state.shiny}
       />
     );

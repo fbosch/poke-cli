@@ -103,14 +103,12 @@ export function Modal({
   right,
   rightWidth,
   title,
-  top = 4,
   width = 84,
 }: {
   children: ReactNode;
   right: ReactNode;
   rightWidth?: number;
   title: string;
-  top?: number;
   width?: number;
 }) {
   return (
@@ -128,27 +126,35 @@ export function Modal({
         }}
       />
       <box
-        backgroundColor={colors.modalBackground}
-        border
-        borderColor={colors.accent}
-        borderStyle="rounded"
         style={{
-          flexDirection: "column",
-          paddingX: 1,
+          alignItems: "center",
+          height: "100%",
+          justifyContent: "center",
           position: "absolute",
-          top,
-          width,
+          width: "100%",
           zIndex: 200,
         }}
       >
-        <DetailCardTitle
-          left={title}
-          right={right}
-          titleWidth={width - 4}
-          {...(rightWidth === undefined ? {} : { rightWidth })}
-        />
-        <text> </text>
-        {children}
+        <box
+          backgroundColor={colors.modalBackground}
+          border
+          borderColor={colors.accent}
+          borderStyle="rounded"
+          style={{
+            flexDirection: "column",
+            paddingX: 1,
+            width,
+          }}
+        >
+          <DetailCardTitle
+            left={title}
+            right={right}
+            titleWidth={width - 4}
+            {...(rightWidth === undefined ? {} : { rightWidth })}
+          />
+          <text> </text>
+          {children}
+        </box>
       </box>
     </>
   );

@@ -16,6 +16,7 @@ import {
   charizardSpecies,
   pikachuEvolutionChain,
   pikachuPokemon,
+  pikachuPokemonEvolutionChain,
   pikachuRockStarPokemon,
   pikachuSpecies,
   staticAbility,
@@ -86,28 +87,7 @@ test("builds Default Representative PokemonDetail from validated PokeAPI resourc
     },
     dexNumber: 25,
     eggGroups: ["Field", "Fairy"],
-    evolutionChain: {
-      root: {
-        evolvesTo: [
-          {
-            evolvesTo: [
-              {
-                evolvesTo: [],
-                method: "use item, Thunder Stone",
-                name: "Raichu",
-                url: "https://pokeapi.co/api/v2/pokemon-species/26/",
-              },
-            ],
-            method: "level up, happiness 220",
-            name: "Pikachu",
-            url: "https://pokeapi.co/api/v2/pokemon-species/25/",
-          },
-        ],
-        method: undefined,
-        name: "Pichu",
-        url: "https://pokeapi.co/api/v2/pokemon-species/172/",
-      },
-    },
+    evolutionChain: pikachuPokemonEvolutionChain,
     flavorText:
       "When several of these POKéMON gather, their electricity can build and cause lightning storms.",
     flavorTexts: [
@@ -244,11 +224,7 @@ test("loads ability descriptions for cached Detail abilities without resource UR
       return HttpResponse.json(staticAbility);
     }),
   );
-  const queryClient = {
-    fetchQuery: <TData>(resourceOptions: { queryFn?: unknown }) => {
-      return executeQuery<TData>(resourceOptions);
-    },
-  };
+  const queryClient = createResourceQueryClient();
   const options = pokemonAbilityDetailsQueryOptions(
     [{ isHidden: false, name: "Static" }],
     queryClient,
@@ -275,11 +251,7 @@ test("loads Default Representative PokemonDetail through mocked PokeAPI queries"
       return HttpResponse.json(pikachuEvolutionChain);
     }),
   );
-  const queryClient = {
-    fetchQuery: <TData>(resourceOptions: { queryFn?: unknown }) => {
-      return executeQuery<TData>(resourceOptions);
-    },
-  };
+  const queryClient = createResourceQueryClient();
   const options = pokemonDetailQueryOptions(pikachuIndexEntry, queryClient);
 
   await expect(executeQuery(options)).resolves.toMatchObject({
@@ -303,11 +275,7 @@ test("loads form-specific PokemonDetail through mocked PokeAPI queries", async (
       return HttpResponse.json(pikachuEvolutionChain);
     }),
   );
-  const queryClient = {
-    fetchQuery: <TData>(resourceOptions: { queryFn?: unknown }) => {
-      return executeQuery<TData>(resourceOptions);
-    },
-  };
+  const queryClient = createResourceQueryClient();
   const rockStarForm = buildPokemonForms(
     pikachuIndexEntry,
     pikachuSpecies,
@@ -399,3 +367,11 @@ test("fails recoverably when uncached PokemonDetail is offline", async () => {
     executeQuery(pokemonDetailQueryOptions(pikachuIndexEntry, queryClient)),
   ).rejects.toThrow();
 });
+
+function createResourceQueryClient() {
+  return {
+    fetchQuery: <TData>(resourceOptions: { queryFn?: unknown }) => {
+      return executeQuery<TData>(resourceOptions);
+    },
+  };
+}

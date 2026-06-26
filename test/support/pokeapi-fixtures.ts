@@ -4,6 +4,7 @@ import type {
   PokeApiPokemon,
   PokeApiPokemonSpecies,
 } from "../../src/pokeapi/schema";
+import type { PokemonEvolutionChain } from "../../src/pokemon-detail";
 
 const languageEnglish = {
   name: "en",
@@ -172,6 +173,60 @@ export const pikachuEvolutionChain: PokeApiEvolutionChain = {
   },
   id: 10,
 };
+
+export const pikachuPokemonEvolutionChain: PokemonEvolutionChain = {
+  root: {
+    evolvesTo: [
+      {
+        evolvesTo: [
+          {
+            evolvesTo: [],
+            method: "use item, Thunder Stone",
+            name: "Raichu",
+            url: "https://pokeapi.co/api/v2/pokemon-species/26/",
+          },
+        ],
+        method: "level up, happiness 220",
+        name: "Pikachu",
+        url: "https://pokeapi.co/api/v2/pokemon-species/25/",
+      },
+    ],
+    method: undefined,
+    name: "Pichu",
+    url: "https://pokeapi.co/api/v2/pokemon-species/172/",
+  },
+};
+
+export const eeveePokemonEvolutionChain: PokemonEvolutionChain = {
+  root: {
+    evolvesTo: [
+      evolutionLeaf("Vaporeon", "use item, Water Stone", 134),
+      evolutionLeaf("Jolteon", "use item, Thunder Stone", 135),
+      evolutionLeaf("Flareon", "use item, Fire Stone", 136),
+      evolutionLeaf("Espeon", "level up, happiness 220, day", 196),
+      evolutionLeaf("Umbreon", "level up, happiness 220, night", 197),
+      evolutionLeaf("Leafeon", "use item, Leaf Stone", 470),
+      evolutionLeaf("Glaceon", "use item, Ice Stone", 471),
+      evolutionLeaf("Sylveon", "level up, affection 2", 700),
+    ],
+    method: undefined,
+    name: "Eevee",
+    url: "https://pokeapi.co/api/v2/pokemon-species/133/",
+  },
+};
+
+function evolutionLeaf(
+  name: string,
+  method: string,
+  dexNumber: number,
+): PokemonEvolutionChain["root"] {
+  return {
+    evolvesTo: [],
+    method,
+    name,
+    url: `https://pokeapi.co/api/v2/pokemon-species/${dexNumber.toString()}/`,
+  };
+}
 
 export const pikachuRockStarPokemon: PokeApiPokemon = {
   ...pikachuPokemon,

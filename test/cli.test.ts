@@ -19,6 +19,7 @@ import {
   queryCachePolicies,
 } from "../src/query-cache";
 import { findExactSpecies } from "../src/search";
+import { pikachuPokemonEvolutionChain } from "./support/pokeapi-fixtures";
 
 const pikachuDetail: PokemonDetail = {
   abilities: [
@@ -38,28 +39,7 @@ const pikachuDetail: PokemonDetail = {
   },
   dexNumber: 25,
   eggGroups: ["Field", "Fairy"],
-  evolutionChain: {
-    root: {
-      evolvesTo: [
-        {
-          evolvesTo: [
-            {
-              evolvesTo: [],
-              method: "use item, Thunder Stone",
-              name: "Raichu",
-              url: "https://pokeapi.co/api/v2/pokemon-species/26/",
-            },
-          ],
-          method: "level up, happiness 220",
-          name: "Pikachu",
-          url: "https://pokeapi.co/api/v2/pokemon-species/25/",
-        },
-      ],
-      method: undefined,
-      name: "Pichu",
-      url: "https://pokeapi.co/api/v2/pokemon-species/172/",
-    },
-  },
+  evolutionChain: pikachuPokemonEvolutionChain,
   flavorText: "Mouse Pokemon.",
   flavorTexts: [
     { source: "Red", text: "Mouse Pokemon." },
@@ -548,6 +528,20 @@ test("Detail evolution viewer closes with Escape instead of exiting", () => {
     screen: "detail",
     detailOverlay: undefined,
     shouldExit: false,
+  });
+});
+
+test("Detail evolution selection loads the selected species", () => {
+  const state = loadedPikachuDetailState();
+  const opened = applyAppKey(state, { name: "e" });
+  const raichu = findExactSpecies("Raichu") ?? throwMissingSpecies("raichu");
+  const selected = loadDetailSpecies(opened as DetailState, raichu);
+
+  expect(selected).toMatchObject({
+    screen: "detail",
+    detailOverlay: undefined,
+    species: { slug: "raichu" },
+    status: "loading",
   });
 });
 

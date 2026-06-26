@@ -45,22 +45,22 @@ type PokeApiEvolutionChainNode = {
 };
 
 export type PokeApiEvolutionDetail = {
-  gender?: string | null;
-  held_item?: { name: string; url: string } | null;
-  item?: { name: string; url: string } | null;
-  known_move?: { name: string; url: string } | null;
-  known_move_type?: { name: string; url: string } | null;
-  location?: { name: string; url: string } | null;
-  min_affection?: number | null;
-  min_beauty?: number | null;
-  min_happiness?: number | null;
-  min_level?: number | null;
-  needs_multiplayer?: boolean | null;
-  needs_overworld_rain?: boolean | null;
-  time_of_day?: string;
-  trade_species?: string | null;
+  gender?: string | null | undefined;
+  held_item?: { name: string; url: string } | null | undefined;
+  item?: { name: string; url: string } | null | undefined;
+  known_move?: { name: string; url: string } | null | undefined;
+  known_move_type?: { name: string; url: string } | null | undefined;
+  location?: { name: string; url: string } | null | undefined;
+  min_affection?: number | null | undefined;
+  min_beauty?: number | null | undefined;
+  min_happiness?: number | null | undefined;
+  min_level?: number | null | undefined;
+  needs_multiplayer?: boolean | null | undefined;
+  needs_overworld_rain?: boolean | null | undefined;
+  time_of_day?: string | undefined;
+  trade_species?: string | null | undefined;
   trigger: { name: string; url: string };
-  turn_upside_down?: boolean | null;
+  turn_upside_down?: boolean | null | undefined;
 };
 
 export type PokeApiEvolutionChain = {

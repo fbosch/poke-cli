@@ -38,6 +38,7 @@ export type LoadedDetailViewProps = {
   loadedSpecies: SpeciesIndexEntry;
   navigationSpecies: SpeciesIndexEntry;
   onNavigate: (delta: DetailNavigationDelta) => void;
+  onSelectSpecies: (name: string) => void;
   shiny: boolean;
 };
 
@@ -51,6 +52,7 @@ export function LoadedDetailView({
   loadedSpecies,
   navigationSpecies,
   onNavigate,
+  onSelectSpecies,
   shiny,
 }: LoadedDetailViewProps) {
   const previousSpecies = getSpeciesByDexDelta(navigationSpecies, -1);
@@ -160,6 +162,7 @@ export function LoadedDetailView({
         detail={detail}
         evolutionViewerOpen={evolutionViewerOpen}
         formSelectorSelectedIndex={formSelectorSelectedIndex}
+        onSelectSpecies={onSelectSpecies}
       />
       <LoadedDetailFooter
         hasAlternateForms={detail.forms.length > 1}
@@ -288,11 +291,13 @@ function DetailOverlays({
   detail,
   evolutionViewerOpen,
   formSelectorSelectedIndex,
+  onSelectSpecies,
 }: {
   abilityViewerOpen: boolean;
   detail: PokemonDetail;
   evolutionViewerOpen: boolean;
   formSelectorSelectedIndex: number | undefined;
+  onSelectSpecies: (name: string) => void;
 }) {
   return (
     <>
@@ -300,7 +305,10 @@ function DetailOverlays({
         <AbilityViewer abilities={detail.abilities} />
       ) : null}
       {evolutionViewerOpen ? (
-        <EvolutionViewer evolutionChain={detail.evolutionChain} />
+        <EvolutionViewer
+          evolutionChain={detail.evolutionChain}
+          onSelectSpecies={onSelectSpecies}
+        />
       ) : null}
       {formSelectorSelectedIndex === undefined ? null : (
         <FormSelector

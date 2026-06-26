@@ -304,7 +304,7 @@ export function buildPokemonForms(
   });
 }
 
-export function buildPokemonEvolutionChain(
+function buildPokemonEvolutionChain(
   evolutionChainResource: PokeApiEvolutionChain,
 ): PokemonEvolutionChain {
   return { root: buildPokemonEvolution(evolutionChainResource.chain) };
@@ -331,42 +331,49 @@ function formatEvolutionMethod(
 
   const parts = [
     formatEvolutionTrigger(detail),
-    detail.min_level === undefined || detail.min_level === null
-      ? undefined
-      : `Lv ${detail.min_level.toString()}`,
-    detail.item === undefined || detail.item === null
-      ? undefined
-      : formatResourceName(detail.item.name),
-    detail.held_item === undefined || detail.held_item === null
-      ? undefined
-      : `hold ${formatResourceName(detail.held_item.name)}`,
-    detail.known_move === undefined || detail.known_move === null
-      ? undefined
-      : `knows ${formatResourceName(detail.known_move.name)}`,
-    detail.known_move_type === undefined || detail.known_move_type === null
-      ? undefined
-      : `knows ${formatResourceName(detail.known_move_type.name)} move`,
-    detail.min_happiness === undefined || detail.min_happiness === null
-      ? undefined
-      : `happiness ${detail.min_happiness.toString()}`,
-    detail.min_affection === undefined || detail.min_affection === null
-      ? undefined
-      : `affection ${detail.min_affection.toString()}`,
-    detail.min_beauty === undefined || detail.min_beauty === null
-      ? undefined
-      : `beauty ${detail.min_beauty.toString()}`,
-    detail.location === undefined || detail.location === null
-      ? undefined
-      : `at ${formatResourceName(detail.location.name)}`,
-    detail.time_of_day === undefined || detail.time_of_day.length === 0
-      ? undefined
-      : detail.time_of_day,
+    formatEvolutionMinimum("Lv", detail.min_level),
+    formatEvolutionResource(detail.item),
+    formatEvolutionResource(detail.held_item, "hold"),
+    formatEvolutionResource(detail.known_move, "knows"),
+    formatEvolutionResource(detail.known_move_type, "knows", "move"),
+    formatEvolutionMinimum("happiness", detail.min_happiness),
+    formatEvolutionMinimum("affection", detail.min_affection),
+    formatEvolutionMinimum("beauty", detail.min_beauty),
+    formatEvolutionResource(detail.location, "at"),
+    formatEvolutionTime(detail.time_of_day),
     detail.needs_overworld_rain === true ? "rain" : undefined,
     detail.needs_multiplayer === true ? "multiplayer" : undefined,
     detail.turn_upside_down === true ? "upside down" : undefined,
   ].filter((part) => part !== undefined);
 
   return parts.length === 0 ? undefined : parts.join(", ");
+}
+
+function formatEvolutionMinimum(
+  label: string,
+  value: number | null | undefined,
+): string | undefined {
+  return value === undefined || value === null
+    ? undefined
+    : `${label} ${value.toString()}`;
+}
+
+function formatEvolutionResource(
+  resource: { name: string } | null | undefined,
+  prefix?: string,
+  suffix?: string,
+): string | undefined {
+  if (resource === undefined || resource === null) {
+    return undefined;
+  }
+
+  return [prefix, formatResourceName(resource.name), suffix]
+    .filter((part) => part !== undefined)
+    .join(" ");
+}
+
+function formatEvolutionTime(value: string | undefined): string | undefined {
+  return value === undefined || value.length === 0 ? undefined : value;
 }
 
 function formatEvolutionTrigger(detail: PokeApiEvolutionDetail): string {

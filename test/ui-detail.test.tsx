@@ -1,13 +1,20 @@
 import { expect, test } from "bun:test";
 import { isValidElement } from "react";
 import { DamageTakenPanel } from "../src/ui/detail/DamageTakenPanel";
-import { EvolutionViewer } from "../src/ui/detail/EvolutionViewer";
+import {
+  EvolutionViewer,
+  buildEvolutionFlowchartLines,
+} from "../src/ui/detail/EvolutionViewer";
 import { FormSelector } from "../src/ui/detail/FormSelector";
 import {
   PokemonSpriteArtwork,
   PokemonSpriteFallback,
   PokemonSpriteShinyMarker,
 } from "../src/ui/detail/PokemonSpritePanel";
+import {
+  eeveePokemonEvolutionChain,
+  pikachuPokemonEvolutionChain,
+} from "./support/pokeapi-fixtures";
 
 test("renders Damage Taken panel with matchup entries", () => {
   const element = DamageTakenPanel({
@@ -100,30 +107,36 @@ test("renders form selector modal", () => {
 
 test("renders evolution viewer modal", () => {
   const element = EvolutionViewer({
-    evolutionChain: {
-      root: {
-        evolvesTo: [
-          {
-            evolvesTo: [
-              {
-                evolvesTo: [],
-                method: "use item, Thunder Stone",
-                name: "Raichu",
-                url: "https://pokeapi.co/api/v2/pokemon-species/26/",
-              },
-            ],
-            method: "level up, happiness 220",
-            name: "Pikachu",
-            url: "https://pokeapi.co/api/v2/pokemon-species/25/",
-          },
-        ],
-        method: undefined,
-        name: "Pichu",
-        url: "https://pokeapi.co/api/v2/pokemon-species/172/",
-      },
-    },
+    evolutionChain: pikachuPokemonEvolutionChain,
+    onSelectSpecies: () => {},
   });
 
   expect(element).toBeDefined();
   expect(isValidElement(element)).toBe(true);
+});
+
+test("formats evolution flowchart lines with methods", () => {
+  expect(buildEvolutionFlowchartLines(pikachuPokemonEvolutionChain)).toEqual([
+    "Pichu",
+    "└─ [level up + happiness 220] ─▶ Pikachu",
+    "   └─ [Thunder Stone] ─▶ Raichu",
+  ]);
+});
+
+test("formats branching Eevee evolution flowchart without clipping labels", () => {
+  const lines = buildEvolutionFlowchartLines(eeveePokemonEvolutionChain);
+  const output = lines.join("\n");
+
+  expect(lines.length).toBeLessThanOrEqual(40);
+  expect(Math.max(...lines.map((line) => line.length))).toBeLessThanOrEqual(90);
+  expect(output).toContain("Eevee");
+  expect(output).toContain("▶ Vaporeon");
+  expect(output).toContain("▶ Jolteon");
+  expect(output).toContain("▶ Flareon");
+  expect(output).toContain("▶ Espeon");
+  expect(output).toContain("▶ Umbreon");
+  expect(output).toContain("▶ Leafeon");
+  expect(output).toContain("▶ Glaceon");
+  expect(output).toContain("▶ Sylveon");
+  expect(output).toContain("[level up + happiness 220 + night]");
 });
