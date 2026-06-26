@@ -1,4 +1,5 @@
 import { calculateDamageTaken } from "../../src/type-matchups";
+import { benchmarkResult } from "../support/benchmark";
 
 const iterations = Number(Bun.env.PKDX_BENCH_ITERATIONS ?? 1_000_000);
 
@@ -36,16 +37,7 @@ const results = benchmarks.map((benchmark) => {
     checksum += damageTaken.weaknesses.length + damageTaken.resistances.length;
   }
 
-  const durationNanoseconds = Bun.nanoseconds() - start;
-  const durationMs = durationNanoseconds / 1_000_000;
-
-  return {
-    checksum,
-    durationMs: Number(durationMs.toFixed(2)),
-    iterations,
-    name: benchmark.name,
-    opsPerSecond: Math.round(iterations / (durationMs / 1000)),
-  };
+  return benchmarkResult(benchmark.name, iterations, start, checksum);
 });
 
 console.table(results);

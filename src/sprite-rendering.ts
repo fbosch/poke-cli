@@ -64,14 +64,15 @@ function renderDecodedPng(image: DecodedPng): RenderedSprite {
     return { height: 0, rows: [], width: 0 };
   }
 
+  const colorIndexes = new Map<number, number>();
   const rows: SpriteCell[][] = [];
   for (let y = bounds.top; y <= bounds.bottom; y += 2) {
     const row: SpriteCell[] = [];
     for (let x = bounds.left; x <= bounds.right; x += 1) {
-      const top = pixelAt(image, x, y);
+      const top = pixelOffset(image, x, y);
       const bottom =
-        y + 1 <= bounds.bottom ? pixelAt(image, x, y + 1) : undefined;
-      row.push(renderPixelPair(top, bottom));
+        y + 1 <= bounds.bottom ? pixelOffset(image, x, y + 1) : undefined;
+      row.push(renderPixelPair(image.pixels, top, bottom, colorIndexes));
     }
     rows.push(row);
   }
@@ -204,6 +205,10 @@ function rgbaPixelsFromScanlines(
   scanlines: Uint8Array,
   channels: number,
 ): Uint8Array {
+  if (chunks.colorType === 6) {
+    return scanlines;
+  }
+
   const stride = chunks.width * channels;
   const pixels = new Uint8Array(chunks.width * chunks.height * 4);
 
@@ -323,6 +328,14 @@ function unfilterScanlineRow({
   stride: number;
   y: number;
 }) {
+  if (filter === 0) {
+    scanlines.set(
+      source.subarray(sourceOffset, sourceOffset + stride),
+      rowOffset,
+    );
+    return;
+  }
+
   for (let x = 0; x < stride; x += 1) {
     const context = unfilterContext({
       channels,
@@ -401,34 +414,45 @@ function unfilterByte(
 }
 
 function renderPixelPair(
-  top: Uint8Array,
-  bottom: Uint8Array | undefined,
+  pixels: Uint8Array,
+  top: number,
+  bottom: number | undefined,
+  colorIndexes: Map<number, number>,
 ): SpriteCell {
-  if (!isOpaque(top)) {
-    return renderWithoutTopPixel(bottom);
+  if (!isOpaque(pixels, top)) {
+    return renderWithoutTopPixel(pixels, bottom, colorIndexes);
   }
 
-  return renderWithTopPixel(top, bottom);
+  return renderWithTopPixel(pixels, top, bottom, colorIndexes);
 }
 
-function renderWithoutTopPixel(bottom: Uint8Array | undefined): SpriteCell {
-  if (bottom === undefined || !isOpaque(bottom)) {
+function renderWithoutTopPixel(
+  pixels: Uint8Array,
+  bottom: number | undefined,
+  colorIndexes: Map<number, number>,
+): SpriteCell {
+  if (bottom === undefined || !isOpaque(pixels, bottom)) {
     return { char: " " };
   }
 
-  return { char: "▄", fg: pixelColorIndex(bottom) };
+  return { char: "▄", fg: pixelColorIndex(pixels, bottom, colorIndexes) };
 }
 
 function renderWithTopPixel(
-  top: Uint8Array,
-  bottom: Uint8Array | undefined,
+  pixels: Uint8Array,
+  top: number,
+  bottom: number | undefined,
+  colorIndexes: Map<number, number>,
 ): SpriteCell {
-  const topColor = pixelColorIndex(top);
-  if (bottom === undefined || !isOpaque(bottom)) {
+  const topColor = pixelColorIndex(pixels, top, colorIndexes);
+  if (bottom === undefined || !isOpaque(pixels, bottom)) {
     return { char: "▀", fg: topColor };
   }
 
-  return renderOpaquePair(topColor, pixelColorIndex(bottom));
+  return renderOpaquePair(
+    topColor,
+    pixelColorIndex(pixels, bottom, colorIndexes),
+  );
 }
 
 function renderOpaquePair(topColor: number, bottomColor: number): SpriteCell {
@@ -447,7 +471,7 @@ function transparentTrimBounds(image: DecodedPng) {
 
   for (let y = 0; y < image.height; y += 1) {
     for (let x = 0; x < image.width; x += 1) {
-      if (!isOpaque(pixelAt(image, x, y))) {
+      if (!isOpaque(image.pixels, pixelOffset(image, x, y))) {
         continue;
       }
 
@@ -461,17 +485,31 @@ function transparentTrimBounds(image: DecodedPng) {
   return right === -1 ? undefined : { bottom, left, right, top };
 }
 
-function pixelAt(image: DecodedPng, x: number, y: number): Uint8Array {
-  const offset = (y * image.width + x) * 4;
-  return image.pixels.slice(offset, offset + 4);
+function pixelOffset(image: DecodedPng, x: number, y: number): number {
+  return (y * image.width + x) * 4;
 }
 
-function pixelColorIndex(pixel: Uint8Array): number {
-  return xtermColorIndex(pixel[0] ?? 0, pixel[1] ?? 0, pixel[2] ?? 0);
+function pixelColorIndex(
+  pixels: Uint8Array,
+  offset: number,
+  colorIndexes: Map<number, number>,
+): number {
+  const red = pixels[offset] ?? 0;
+  const green = pixels[offset + 1] ?? 0;
+  const blue = pixels[offset + 2] ?? 0;
+  const key = (red << 16) | (green << 8) | blue;
+  const cached = colorIndexes.get(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const colorIndex = xtermColorIndex(red, green, blue);
+  colorIndexes.set(key, colorIndex);
+  return colorIndex;
 }
 
-function isOpaque(pixel: Uint8Array): boolean {
-  return (pixel[3] ?? 0) >= alphaOpaqueThreshold;
+function isOpaque(pixels: Uint8Array, offset: number): boolean {
+  return (pixels[offset + 3] ?? 0) >= alphaOpaqueThreshold;
 }
 
 function alphaForGrayscale(
