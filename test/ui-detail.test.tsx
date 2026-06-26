@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { isValidElement } from "react";
+import { DamageTakenPanel } from "../src/ui/detail/DamageTakenPanel";
+import { FormSelector } from "../src/ui/detail/FormSelector";
 import {
-  DamageTakenPanel,
-  FormSelector,
   PokemonSpriteArtwork,
   PokemonSpriteFallback,
   PokemonSpriteShinyMarker,
-} from "../src/ui/app";
+} from "../src/ui/detail/PokemonSpritePanel";
 
 test("renders Damage Taken panel with matchup entries", () => {
   const element = DamageTakenPanel({
