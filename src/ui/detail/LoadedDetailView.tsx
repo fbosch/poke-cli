@@ -142,7 +142,7 @@ export function LoadedDetailView({
           </box>
         </box>
         <box style={{ flexDirection: "row", gap: 1 }}>
-          <DetailPanel width={45}>
+          <DetailPanel minHeight={10} width={45}>
             <text attributes={textStyles.active}>Stats</text>
             {detail.stats.map((stat) => (
               <text key={stat.name}>
@@ -152,7 +152,7 @@ export function LoadedDetailView({
               </text>
             ))}
           </DetailPanel>
-          <DetailPanel width={50}>
+          <DetailPanel minHeight={10} width={50}>
             <DamageTakenPanel damageTaken={detail.damageTaken} />
           </DetailPanel>
         </box>
@@ -176,13 +176,13 @@ export function LoadedDetailView({
   );
 }
 
-function DexNavigationButtons({
+export function DexNavigationButtons({
   nextSpecies,
   onNavigate,
   previousSpecies,
 }: {
   nextSpecies: SpeciesIndexEntry | undefined;
-  onNavigate: (delta: DetailNavigationDelta) => void;
+  onNavigate?: (delta: DetailNavigationDelta) => void;
   previousSpecies: SpeciesIndexEntry | undefined;
 }) {
   return (
@@ -200,7 +200,9 @@ function DexNavigationButtons({
             : `< ${formatDexNavigationSpecies(previousSpecies)}`
         }
         onPress={
-          previousSpecies === undefined ? undefined : () => onNavigate(-1)
+          previousSpecies === undefined || onNavigate === undefined
+            ? undefined
+            : () => onNavigate(-1)
         }
       />
       <DexNavigationButton
@@ -209,7 +211,11 @@ function DexNavigationButtons({
             ? ""
             : `${formatDexNavigationSpecies(nextSpecies)} >`
         }
-        onPress={nextSpecies === undefined ? undefined : () => onNavigate(1)}
+        onPress={
+          nextSpecies === undefined || onNavigate === undefined
+            ? undefined
+            : () => onNavigate(1)
+        }
       />
     </box>
   );

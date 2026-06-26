@@ -52,7 +52,32 @@ export type AppKey = {
 
 export type DetailNavigationDelta = -1 | 1;
 
+type AppEvent =
+  | { key: AppKey; type: "key" }
+  | { species: SpeciesIndexEntry; type: "detail.loadSpecies" }
+  | {
+      detail: PokemonDetail;
+      species: SpeciesIndexEntry;
+      type: "detail.loadSucceeded";
+    }
+  | {
+      error: unknown;
+      form?: PokemonForm;
+      species: SpeciesIndexEntry;
+      type: "detail.loadFailed";
+    };
+
 type SearchKeyHandler = (state: SearchState) => AppState;
+type SearchStateNode = {
+  transition: (state: SearchState, event: AppEvent) => AppState;
+};
+type DetailStateNode = {
+  transition: (state: DetailState, event: AppEvent) => DetailState | AppState;
+};
+type AppStateMachine = {
+  initial: (query?: string) => AppState;
+  transition: (state: AppState, event: AppEvent) => AppState;
+};
 
 const searchKeyHandlers: Record<string, SearchKeyHandler> = {
   backspace: (state) => updateSearchQuery(state, state.query.slice(0, -1)),
@@ -66,6 +91,69 @@ const searchKeyHandlers: Record<string, SearchKeyHandler> = {
 };
 
 export function createInitialAppState(query = ""): AppState {
+  return appStateMachine.initial(query);
+}
+
+function transitionAppState(state: AppState, event: AppEvent): AppState {
+  return appStateMachine.transition(state, event);
+}
+
+export function applyAppKey(state: AppState, key: AppKey): AppState {
+  return transitionAppState(state, { key, type: "key" });
+}
+
+const appStateMachine: AppStateMachine = {
+  initial: createInitialState,
+  transition: (state, event) => {
+    if (event.type === "key" && shouldExitFromState(state, event.key)) {
+      return {
+        ...state,
+        shouldExit: true,
+      };
+    }
+
+    if (state.screen === "detail") {
+      return detailStateNode.transition(state, event);
+    }
+
+    return searchStateNode.transition(state, event);
+  },
+};
+
+const searchStateNode: SearchStateNode = {
+  transition: (state, event) => {
+    if (event.type !== "key") {
+      return state;
+    }
+
+    return applySearchKey(state, event.key);
+  },
+};
+
+const detailStateNode: DetailStateNode = {
+  transition: (state, event) => {
+    if (event.type === "detail.loadSpecies") {
+      return loadDetailSpeciesState(state, event.species);
+    }
+
+    if (event.type === "detail.loadSucceeded") {
+      return detailLoadSucceededState(state, event.species, event.detail);
+    }
+
+    if (event.type === "detail.loadFailed") {
+      return detailLoadFailedState(
+        state,
+        event.species,
+        event.error,
+        event.form,
+      );
+    }
+
+    return applyDetailKey(state, event.key);
+  },
+};
+
+function createInitialState(query = ""): AppState {
   const exactSpecies = findExactSpecies(query);
   if (exactSpecies !== undefined) {
     return {
@@ -93,30 +181,23 @@ export function createInitialAppState(query = ""): AppState {
   };
 }
 
-export function applyAppKey(state: AppState, key: AppKey): AppState {
+function shouldExitFromState(state: AppState, key: AppKey): boolean {
   if (
     state.screen === "detail" &&
     state.detailOverlay !== undefined &&
     key.name === "escape"
   ) {
-    return closeDetailOverlay(state);
+    return false;
   }
 
-  if (isExitKey(key)) {
-    return {
-      ...state,
-      shouldExit: true,
-    };
-  }
-
-  if (state.screen === "detail") {
-    return applyDetailKey(state, key);
-  }
-
-  return applySearchKey(state, key);
+  return isExitKey(key);
 }
 
 function applyDetailKey(state: DetailState, key: AppKey): AppState {
+  if (state.detailOverlay !== undefined && key.name === "escape") {
+    return closeDetailOverlay(state);
+  }
+
   if (state.detailOverlay !== undefined) {
     return applyDetailOverlayKey(state, key);
   }
@@ -329,16 +410,7 @@ export function loadDetailSpecies(
   state: DetailState,
   species: SpeciesIndexEntry,
 ): DetailState {
-  return {
-    ...state,
-    descriptionIndex: 0,
-    errorMessage: undefined,
-    detailOverlay: undefined,
-    form: undefined,
-    retryToken: 0,
-    species,
-    status: "loading",
-  };
+  return transitionDetailState(state, { species, type: "detail.loadSpecies" });
 }
 
 export function loadAdjacentDetailSpecies(
@@ -370,6 +442,58 @@ export function detailLoadSucceeded(
   species: SpeciesIndexEntry,
   detail: PokemonDetail,
 ): DetailState {
+  return transitionDetailState(state, {
+    detail,
+    species,
+    type: "detail.loadSucceeded",
+  });
+}
+
+export function detailLoadFailed(
+  state: DetailState,
+  species: SpeciesIndexEntry,
+  error: unknown,
+  form?: PokemonForm,
+): DetailState {
+  const event: AppEvent = {
+    error,
+    species,
+    type: "detail.loadFailed",
+    ...(form === undefined ? {} : { form }),
+  };
+
+  return transitionDetailState(state, event);
+}
+
+function transitionDetailState(
+  state: DetailState,
+  event: AppEvent,
+): DetailState {
+  const next = detailStateNode.transition(state, event);
+  return next.screen === "detail" ? next : state;
+}
+
+function loadDetailSpeciesState(
+  state: DetailState,
+  species: SpeciesIndexEntry,
+): DetailState {
+  return {
+    ...state,
+    descriptionIndex: 0,
+    errorMessage: undefined,
+    detailOverlay: undefined,
+    form: undefined,
+    retryToken: 0,
+    species,
+    status: "loading",
+  };
+}
+
+function detailLoadSucceededState(
+  state: DetailState,
+  species: SpeciesIndexEntry,
+  detail: PokemonDetail,
+): DetailState {
   if (
     state.species.slug !== species.slug ||
     pokemonFormTargetKey(state.form) !== pokemonFormTargetKey(detail.form)
@@ -390,7 +514,7 @@ export function detailLoadSucceeded(
   };
 }
 
-export function detailLoadFailed(
+function detailLoadFailedState(
   state: DetailState,
   species: SpeciesIndexEntry,
   error: unknown,

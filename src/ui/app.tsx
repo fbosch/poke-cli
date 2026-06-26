@@ -23,7 +23,10 @@ import {
   PokedexCard,
 } from "./components";
 import { colors, textStyles } from "./design-tokens";
-import { LoadedDetailView } from "./detail/LoadedDetailView";
+import {
+  DexNavigationButtons,
+  LoadedDetailView,
+} from "./detail/LoadedDetailView";
 import { SearchView } from "./search/SearchView";
 
 type AppProps = {
@@ -167,8 +170,34 @@ function InitialDetailLoadingView({ species }: { species: SpeciesIndexEntry }) {
           right=""
         />
         <text> </text>
+        <box style={{ alignItems: "flex-start", flexDirection: "row", gap: 1 }}>
+          <SkeletonPanel height={17} width={42} />
+          <box style={{ flexDirection: "column", width: 53 }}>
+            <SkeletonPanel height={7} width={53} />
+            <SkeletonPanel height={9} width={53} />
+          </box>
+        </box>
+        <box style={{ flexDirection: "row", gap: 1 }}>
+          <SkeletonPanel height={10} width={45} />
+          <SkeletonPanel height={10} width={50} />
+        </box>
       </PokedexCard>
+      <DexNavigationButtons
+        nextSpecies={getSpeciesByDexDelta(species, 1)}
+        previousSpecies={getSpeciesByDexDelta(species, -1)}
+      />
     </DetailScreen>
+  );
+}
+
+function SkeletonPanel({ height, width }: { height: number; width: number }) {
+  return (
+    <box
+      border
+      borderColor={colors.panelSecondary}
+      borderStyle="rounded"
+      style={{ height, width }}
+    />
   );
 }
 
