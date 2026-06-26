@@ -41,7 +41,6 @@ type AppProps = {
 
 export function App({ initialQuery = "", onExit }: AppProps) {
   const [state, setState] = useState(() => createInitialAppState(initialQuery));
-  const queryClient = useQueryClient();
 
   useKeyboard((key: KeyEvent) => {
     setState((current) => {
@@ -93,7 +92,6 @@ export function App({ initialQuery = "", onExit }: AppProps) {
               : current,
           );
         }}
-        queryClient={queryClient}
         state={state}
       />
     );
@@ -115,20 +113,16 @@ type DetailViewProps = {
     detail: PokemonDetail,
   ) => void;
   onNavigate: (delta: DetailNavigationDelta) => void;
-  queryClient: ReturnType<typeof useQueryClient>;
   state: DetailState;
 };
 
 type DetailLoadProps = Pick<
   DetailViewProps,
-  "onLoadFailed" | "onLoadSucceeded" | "queryClient" | "state"
+  "onLoadFailed" | "onLoadSucceeded" | "state"
 >;
 type AbilityDetailsPreloadProps = Pick<
   DetailViewProps,
-  | "onAbilityDetailsLoadFailed"
-  | "onAbilityDetailsLoaded"
-  | "queryClient"
-  | "state"
+  "onAbilityDetailsLoadFailed" | "onAbilityDetailsLoaded" | "state"
 >;
 
 function DetailView({
@@ -137,32 +131,27 @@ function DetailView({
   onLoadFailed,
   onLoadSucceeded,
   onNavigate,
-  queryClient,
   state,
 }: DetailViewProps) {
   usePokemonDetailLoad({
     onLoadFailed,
     onLoadSucceeded,
-    queryClient,
     state,
   });
   usePokemonSpritePrefetch({
     enabled: state.status !== "error",
     form: state.form,
-    queryClient,
     shiny: state.shiny,
     species: state.species,
   });
   useAdjacentPokemonPrefetch({
     enabled: state.status !== "error",
-    queryClient,
     shiny: state.shiny,
     species: state.species,
   });
   useAbilityDetailsPreload({
     onAbilityDetailsLoadFailed,
     onAbilityDetailsLoaded,
-    queryClient,
     state,
   });
 
@@ -177,7 +166,6 @@ function DetailView({
         loadedSpecies={state.detail.species}
         navigationSpecies={state.species}
         onNavigate={onNavigate}
-        queryClient={queryClient}
         shiny={state.shiny}
       />
     );
@@ -241,9 +229,9 @@ function SkeletonPanel({ height, width }: { height: number; width: number }) {
 function usePokemonDetailLoad({
   onLoadFailed,
   onLoadSucceeded,
-  queryClient,
   state,
 }: DetailLoadProps) {
+  const queryClient = useQueryClient();
   const retryErrorUpdatedAt = useRef<number | undefined>(undefined);
   const detail = useQuery({
     ...pokemonDetailQueryOptions(state.species, queryClient, state.form),
@@ -289,16 +277,15 @@ function usePokemonDetailLoad({
 function usePokemonSpritePrefetch({
   enabled,
   form,
-  queryClient,
   shiny,
   species,
 }: {
   enabled: boolean;
   form: PokemonForm | undefined;
-  queryClient: ReturnType<typeof useQueryClient>;
   shiny: boolean;
   species: SpeciesIndexEntry;
 }) {
+  const queryClient = useQueryClient();
   useQuery({
     ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
     enabled,
@@ -308,9 +295,9 @@ function usePokemonSpritePrefetch({
 function useAbilityDetailsPreload({
   onAbilityDetailsLoadFailed,
   onAbilityDetailsLoaded,
-  queryClient,
   state,
 }: AbilityDetailsPreloadProps) {
+  const queryClient = useQueryClient();
   const abilities = state.detail?.detail.abilities;
   const abilityDetails = useQuery({
     ...pokemonAbilityDetailsQueryOptions(abilities ?? [], queryClient),
@@ -342,15 +329,14 @@ function useAbilityDetailsPreload({
 
 function useAdjacentPokemonPrefetch({
   enabled,
-  queryClient,
   shiny,
   species,
 }: {
   enabled: boolean;
-  queryClient: ReturnType<typeof useQueryClient>;
   shiny: boolean;
   species: SpeciesIndexEntry;
 }) {
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (enabled === false) {
       return;

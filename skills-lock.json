@@ -5,6 +5,12 @@
       "source": "bun.sh",
       "sourceType": "well-known",
       "computedHash": "df9cb592598c6726b77c9d5de846671d6a0b3acb9415a430722b0b3207a50d88"
+    },
+    "tanstack-query-best-practices": {
+      "source": "deckardger/tanstack-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/tanstack-query/SKILL.md",
+      "computedHash": "21d2e8b7468a81d772b6527ad8ca178cc2f3f08af777bb9061333013ee88a0c9"
     }
   }
 }

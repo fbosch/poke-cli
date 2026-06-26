@@ -1,4 +1,4 @@
-import { useQuery, type useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PokemonAbilityDetail, PokemonDetail } from "../../pokemon-detail";
 import { pokemonAbilityDetailsQueryOptions } from "../../pokemon-detail";
 import { KeyHints, Modal, keyHintsWidth } from "../components";
@@ -6,11 +6,10 @@ import { colors, textStyles } from "../design-tokens";
 
 export function AbilityViewer({
   abilities,
-  queryClient,
 }: {
   abilities: PokemonDetail["abilities"];
-  queryClient: ReturnType<typeof useQueryClient>;
 }) {
+  const queryClient = useQueryClient();
   const abilityDetails = useQuery(
     pokemonAbilityDetailsQueryOptions(abilities, queryClient),
   );

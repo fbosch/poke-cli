@@ -1,4 +1,3 @@
-import type { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import type { DetailNavigationDelta } from "../../app-state";
 import type { PokemonDetail } from "../../pokemon-detail";
@@ -37,7 +36,6 @@ export type LoadedDetailViewProps = {
   loadedSpecies: SpeciesIndexEntry;
   navigationSpecies: SpeciesIndexEntry;
   onNavigate: (delta: DetailNavigationDelta) => void;
-  queryClient: ReturnType<typeof useQueryClient>;
   shiny: boolean;
 };
 
@@ -50,7 +48,6 @@ export function LoadedDetailView({
   loadedSpecies,
   navigationSpecies,
   onNavigate,
-  queryClient,
   shiny,
 }: LoadedDetailViewProps) {
   const previousSpecies = getSpeciesByDexDelta(navigationSpecies, -1);
@@ -99,7 +96,6 @@ export function LoadedDetailView({
             {shiny ? <PokemonSpriteShinyMarker /> : null}
             <PokemonSpritePanel
               form={detail.form}
-              queryClient={queryClient}
               shiny={shiny}
               species={loadedSpecies}
             />
@@ -160,7 +156,6 @@ export function LoadedDetailView({
         abilityViewerOpen={abilityViewerOpen}
         detail={detail}
         formSelectorSelectedIndex={formSelectorSelectedIndex}
-        queryClient={queryClient}
       />
       <LoadedDetailFooter
         hasAlternateForms={detail.forms.length > 1}
@@ -288,17 +283,15 @@ function DetailOverlays({
   abilityViewerOpen,
   detail,
   formSelectorSelectedIndex,
-  queryClient,
 }: {
   abilityViewerOpen: boolean;
   detail: PokemonDetail;
   formSelectorSelectedIndex: number | undefined;
-  queryClient: ReturnType<typeof useQueryClient>;
 }) {
   return (
     <>
       {abilityViewerOpen ? (
-        <AbilityViewer abilities={detail.abilities} queryClient={queryClient} />
+        <AbilityViewer abilities={detail.abilities} />
       ) : null}
       {formSelectorSelectedIndex === undefined ? null : (
         <FormSelector

@@ -1,5 +1,5 @@
 import { RGBA } from "@opentui/core";
-import { useQuery, type useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PokemonForm } from "../../pokemon-detail";
 import { pokespriteRenderedSpriteQueryOptions } from "../../pokesprite";
 import type { SpeciesIndexEntry } from "../../search";
@@ -11,17 +11,16 @@ const detailSpriteCanvasWidth = 40;
 
 type PokemonSpritePanelProps = {
   form: PokemonForm | undefined;
-  queryClient: ReturnType<typeof useQueryClient>;
   shiny: boolean;
   species: SpeciesIndexEntry;
 };
 
 export function PokemonSpritePanel({
   form,
-  queryClient,
   shiny,
   species,
 }: PokemonSpritePanelProps) {
+  const queryClient = useQueryClient();
   const sprite = useQuery(
     pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
   );
