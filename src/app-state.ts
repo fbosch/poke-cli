@@ -41,6 +41,7 @@ export type LoadedDetail = {
 
 export type DetailOverlay =
   | "abilities"
+  | "abilities-loading"
   | { kind: "forms"; selectedIndex: number };
 
 export type AppKey = {
@@ -65,7 +66,9 @@ type AppEvent =
       form?: PokemonForm;
       species: SpeciesIndexEntry;
       type: "detail.loadFailed";
-    };
+    }
+  | { type: "detail.abilitiesLoaded" }
+  | { type: "detail.abilitiesLoadFailed" };
 
 type SearchKeyHandler = (state: SearchState) => AppState;
 type SearchStateNode = {
@@ -147,6 +150,14 @@ const detailStateNode: DetailStateNode = {
         event.error,
         event.form,
       );
+    }
+
+    if (event.type === "detail.abilitiesLoaded") {
+      return openLoadedAbilityOverlay(state);
+    }
+
+    if (event.type === "detail.abilitiesLoadFailed") {
+      return closeDetailOverlay(state);
     }
 
     return applyDetailKey(state, event.key);
@@ -245,7 +256,7 @@ function getDetailOverlayAction(
   key: AppKey,
 ): DetailState["detailOverlay"] {
   if (key.name === "a" && state.detail !== undefined) {
-    return "abilities";
+    return "abilities-loading";
   }
 
   if (canOpenFormSelector(state, key)) {
@@ -289,10 +300,25 @@ function applyDetailOverlayKey(state: DetailState, key: AppKey): AppState {
     return applyAbilityOverlayKey(state, key);
   }
 
+  if (state.detailOverlay === "abilities-loading") {
+    return applyAbilityLoadingOverlayKey(state, key);
+  }
+
   return applyFormOverlayKey(state, key);
 }
 
 function applyAbilityOverlayKey(state: DetailState, key: AppKey): AppState {
+  if (key.name === "a") {
+    return closeDetailOverlay(state);
+  }
+
+  return state;
+}
+
+function applyAbilityLoadingOverlayKey(
+  state: DetailState,
+  key: AppKey,
+): AppState {
   if (key.name === "a") {
     return closeDetailOverlay(state);
   }
@@ -332,6 +358,10 @@ function moveDetailFormSelection(
     return state;
   }
 
+  if (state.detailOverlay === "abilities-loading") {
+    return state;
+  }
+
   const maxIndex = Math.max(0, state.detail.detail.forms.length - 1);
 
   return {
@@ -350,7 +380,8 @@ function loadSelectedDetailForm(state: DetailState): DetailState {
   if (
     state.detail === undefined ||
     state.detailOverlay === undefined ||
-    state.detailOverlay === "abilities"
+    state.detailOverlay === "abilities" ||
+    state.detailOverlay === "abilities-loading"
   ) {
     return state;
   }
@@ -465,6 +496,14 @@ export function detailLoadFailed(
   return transitionDetailState(state, event);
 }
 
+export function detailAbilitiesLoaded(state: DetailState): DetailState {
+  return transitionDetailState(state, { type: "detail.abilitiesLoaded" });
+}
+
+export function detailAbilitiesLoadFailed(state: DetailState): DetailState {
+  return transitionDetailState(state, { type: "detail.abilitiesLoadFailed" });
+}
+
 function transitionDetailState(
   state: DetailState,
   event: AppEvent,
@@ -531,6 +570,17 @@ function detailLoadFailedState(
     ...state,
     errorMessage: getDetailErrorMessage(error),
     status: "error",
+  };
+}
+
+function openLoadedAbilityOverlay(state: DetailState): DetailState {
+  if (state.detailOverlay !== "abilities-loading") {
+    return state;
+  }
+
+  return {
+    ...state,
+    detailOverlay: "abilities",
   };
 }
 

@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   applyAppKey,
   createInitialAppState,
+  detailAbilitiesLoadFailed,
+  detailAbilitiesLoaded,
   detailLoadFailed,
   detailLoadSucceeded,
   loadAdjacentDetailSpecies,
@@ -12,7 +14,10 @@ import {
   type DetailState,
 } from "../app-state";
 import type { PokemonDetail, PokemonForm } from "../pokemon-detail";
-import { pokemonDetailQueryOptions } from "../pokemon-detail";
+import {
+  pokemonAbilityDetailsQueryOptions,
+  pokemonDetailQueryOptions,
+} from "../pokemon-detail";
 import { pokespriteRenderedSpriteQueryOptions } from "../pokesprite";
 import { getSpeciesByDexDelta, type SpeciesIndexEntry } from "../search";
 import {
@@ -60,6 +65,20 @@ export function App({ initialQuery = "", onExit }: AppProps) {
               : current,
           );
         }}
+        onAbilityDetailsLoadFailed={() => {
+          setState((current) =>
+            current.screen === "detail"
+              ? detailAbilitiesLoadFailed(current)
+              : current,
+          );
+        }}
+        onAbilityDetailsLoaded={() => {
+          setState((current) =>
+            current.screen === "detail"
+              ? detailAbilitiesLoaded(current)
+              : current,
+          );
+        }}
         onLoadSucceeded={(species, detail) => {
           setState((current) =>
             current.screen === "detail"
@@ -84,6 +103,8 @@ export function App({ initialQuery = "", onExit }: AppProps) {
 }
 
 type DetailViewProps = {
+  onAbilityDetailsLoadFailed: () => void;
+  onAbilityDetailsLoaded: () => void;
   onLoadFailed: (
     species: DetailState["species"],
     form: DetailState["form"],
@@ -98,9 +119,21 @@ type DetailViewProps = {
   state: DetailState;
 };
 
-type DetailLoadProps = Omit<DetailViewProps, "onNavigate">;
+type DetailLoadProps = Pick<
+  DetailViewProps,
+  "onLoadFailed" | "onLoadSucceeded" | "queryClient" | "state"
+>;
+type AbilityDetailsPreloadProps = Pick<
+  DetailViewProps,
+  | "onAbilityDetailsLoadFailed"
+  | "onAbilityDetailsLoaded"
+  | "queryClient"
+  | "state"
+>;
 
 function DetailView({
+  onAbilityDetailsLoadFailed,
+  onAbilityDetailsLoaded,
   onLoadFailed,
   onLoadSucceeded,
   onNavigate,
@@ -125,6 +158,12 @@ function DetailView({
     queryClient,
     shiny: state.shiny,
     species: state.species,
+  });
+  useAbilityDetailsPreload({
+    onAbilityDetailsLoadFailed,
+    onAbilityDetailsLoaded,
+    queryClient,
+    state,
   });
 
   if (state.detail !== undefined) {
@@ -264,6 +303,41 @@ function usePokemonSpritePrefetch({
     ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
     enabled,
   });
+}
+
+function useAbilityDetailsPreload({
+  onAbilityDetailsLoadFailed,
+  onAbilityDetailsLoaded,
+  queryClient,
+  state,
+}: AbilityDetailsPreloadProps) {
+  const abilities = state.detail?.detail.abilities;
+  const abilityDetails = useQuery({
+    ...pokemonAbilityDetailsQueryOptions(abilities ?? [], queryClient),
+    enabled:
+      state.detailOverlay === "abilities-loading" && abilities !== undefined,
+  });
+
+  useEffect(() => {
+    if (state.detailOverlay !== "abilities-loading") {
+      return;
+    }
+
+    if (abilityDetails.data !== undefined) {
+      onAbilityDetailsLoaded();
+      return;
+    }
+
+    if (abilityDetails.isError) {
+      onAbilityDetailsLoadFailed();
+    }
+  }, [
+    abilityDetails.data,
+    abilityDetails.isError,
+    onAbilityDetailsLoadFailed,
+    onAbilityDetailsLoaded,
+    state.detailOverlay,
+  ]);
 }
 
 function useAdjacentPokemonPrefetch({

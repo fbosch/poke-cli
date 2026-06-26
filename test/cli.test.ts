@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   applyAppKey,
   createInitialAppState,
+  detailAbilitiesLoaded,
   detailLoadFailed,
   detailLoadSucceeded,
   loadDetailSpecies,
@@ -367,9 +368,14 @@ test("Detail retry returns a recoverable error to loading", () => {
 
 test("Detail opens and closes ability viewer with a", () => {
   const state = loadedPikachuDetailState();
-  const opened = applyAppKey(state, { name: "a" });
+  const loading = applyAppKey(state, { name: "a" });
+  const opened = detailAbilitiesLoaded(loading as DetailState);
   const closed = applyAppKey(opened, { name: "a" });
 
+  expect(loading).toMatchObject({
+    screen: "detail",
+    detailOverlay: "abilities-loading",
+  });
   expect(opened).toMatchObject({
     screen: "detail",
     detailOverlay: "abilities",
@@ -383,7 +389,8 @@ test("Detail opens and closes ability viewer with a", () => {
 
 test("Detail ability viewer closes with Escape instead of exiting", () => {
   const state = loadedPikachuDetailState();
-  const opened = applyAppKey(state, { name: "a" });
+  const loading = applyAppKey(state, { name: "a" });
+  const opened = detailAbilitiesLoaded(loading as DetailState);
   const closed = applyAppKey(opened, { name: "escape" });
 
   expect(closed).toMatchObject({

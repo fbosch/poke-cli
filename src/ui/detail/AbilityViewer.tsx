@@ -21,11 +21,6 @@ export function AbilityViewer({
       rightWidth={keyHintsWidth([{ key: "a/esc", action: "close" }])}
       title="Abilities"
     >
-      {abilityDetails.isPending ? (
-        <text fg={colors.muted} attributes={textStyles.muted}>
-          Loading ability descriptions...
-        </text>
-      ) : null}
       {abilityDetails.isError ? (
         <text fg={colors.muted} attributes={textStyles.muted}>
           {abilityErrorMessage(abilityDetails.error)}
