@@ -14,7 +14,7 @@ import {
 import type { PokemonDetail, PokemonForm } from "../pokemon-detail";
 import { pokemonDetailQueryOptions } from "../pokemon-detail";
 import { pokespriteRenderedSpriteQueryOptions } from "../pokesprite";
-import type { SpeciesIndexEntry } from "../search";
+import { getSpeciesByDexDelta, type SpeciesIndexEntry } from "../search";
 import {
   DetailCardTitle,
   DetailScreen,
@@ -117,6 +117,12 @@ function DetailView({
     shiny: state.shiny,
     species: state.species,
   });
+  useAdjacentPokemonPrefetch({
+    enabled: state.status !== "error",
+    queryClient,
+    shiny: state.shiny,
+    species: state.species,
+  });
 
   if (state.detail !== undefined) {
     return (
@@ -213,6 +219,48 @@ function usePokemonSpritePrefetch({
     ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
     enabled,
   });
+}
+
+function useAdjacentPokemonPrefetch({
+  enabled,
+  queryClient,
+  shiny,
+  species,
+}: {
+  enabled: boolean;
+  queryClient: ReturnType<typeof useQueryClient>;
+  shiny: boolean;
+  species: SpeciesIndexEntry;
+}) {
+  useEffect(() => {
+    if (enabled === false) {
+      return;
+    }
+
+    prefetchPokemonDetail(
+      queryClient,
+      getSpeciesByDexDelta(species, -1),
+      shiny,
+    );
+    prefetchPokemonDetail(queryClient, getSpeciesByDexDelta(species, 1), shiny);
+  }, [enabled, queryClient, shiny, species]);
+}
+
+function prefetchPokemonDetail(
+  queryClient: ReturnType<typeof useQueryClient>,
+  species: SpeciesIndexEntry | undefined,
+  shiny: boolean,
+) {
+  if (species === undefined) {
+    return;
+  }
+
+  void queryClient.prefetchQuery(
+    pokemonDetailQueryOptions(species, queryClient),
+  );
+  void queryClient.prefetchQuery(
+    pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny),
+  );
 }
 
 function getFormSelectorSelectedIndex(state: DetailState): number | undefined {
