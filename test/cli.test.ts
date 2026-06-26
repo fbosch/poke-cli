@@ -126,10 +126,98 @@ test("Search selection moves with Ctrl-J and Ctrl-K", () => {
   });
 });
 
+test("Search maps terminal Ctrl-J and Ctrl-K events to arrow movement", () => {
+  expectSearchMovementForKeys(
+    {
+      ctrl: true,
+      name: "j",
+    },
+    {
+      ctrl: true,
+      name: "k",
+    },
+  );
+});
+
+test("Search maps Ctrl-Enter and Ctrl-Return events to arrow movement", () => {
+  expectSearchMovementForKeys(
+    {
+      ctrl: true,
+      name: "return",
+    },
+    {
+      ctrl: true,
+      name: "k",
+    },
+  );
+  expectSearchMovementForKeys(
+    {
+      ctrl: true,
+      name: "enter",
+    },
+    {
+      ctrl: true,
+      name: "k",
+    },
+  );
+});
+
+test("Search maps return line-feed Ctrl-J to arrow movement", () => {
+  expectSearchMovementForKeys(
+    {
+      name: "return",
+      sequence: "\n",
+    },
+    {
+      name: "k",
+      sequence: "\v",
+    },
+  );
+});
+
+test("Search maps raw Ctrl-J and Ctrl-K sequences to arrow movement", () => {
+  expectSearchMovementForKeys(
+    {
+      name: "j",
+      sequence: "\n",
+    },
+    {
+      name: "k",
+      sequence: "\v",
+    },
+  );
+});
+
+function expectSearchMovementForKeys(
+  downKey: Parameters<typeof applyAppKey>[1],
+  upKey: Parameters<typeof applyAppKey>[1],
+) {
+  const selected = applyAppKey(createInitialAppState("nidoran"), downKey);
+  const reset = applyAppKey(selected, upKey);
+
+  expect(selected).toMatchObject({
+    screen: "search",
+    query: "nidoran",
+    selectedIndex: 1,
+  });
+  expect(reset).toMatchObject({
+    screen: "search",
+    query: "nidoran",
+    selectedIndex: 0,
+  });
+}
+
+test("Search ignores raw control characters as text input", () => {
+  const state = createInitialAppState("pika");
+  const next = applyAppKey(state, { name: "x", sequence: "\n" });
+
+  expect(next).toEqual(state);
+});
+
 test("Search selection moves for short query input", () => {
   const selected = applyAppKey(createInitialAppState("pi"), {
-    name: "j",
     ctrl: true,
+    name: "j",
   });
 
   expect(selected).toMatchObject({

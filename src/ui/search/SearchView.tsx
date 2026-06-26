@@ -2,6 +2,8 @@ import { minimumSearchQueryLength, searchResults } from "../../search";
 import { InstructionFooter, KeyHints, PokedexHeader } from "../components";
 import { colors, textStyles } from "../design-tokens";
 
+const searchPanelWidth = 56;
+
 export function SearchView({
   query,
   selectedIndex,
@@ -24,12 +26,16 @@ export function SearchView({
         position: "relative",
       }}
     >
-      <box style={{ position: "relative", width: 56 }}>
+      <box style={{ position: "relative", width: searchPanelWidth }}>
         <box
           border
           borderColor={colors.accent}
           borderStyle="rounded"
-          style={{ flexDirection: "column", paddingX: 1, width: 56 }}
+          style={{
+            flexDirection: "column",
+            paddingX: 1,
+            width: searchPanelWidth,
+          }}
         >
           <text
             attributes={
@@ -46,7 +52,7 @@ export function SearchView({
               left: 0,
               position: "absolute",
               top: 3,
-              width: 56,
+              width: searchPanelWidth,
               zIndex: 100,
             }}
           >
@@ -68,7 +74,7 @@ export function SearchView({
                     ? { bg: colors.selected, fg: colors.selectedText }
                     : {})}
                 >
-                  {result.selected ? label.padEnd(56) : label}
+                  {label.padEnd(searchPanelWidth)}
                 </text>
               );
             })}

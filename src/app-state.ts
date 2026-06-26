@@ -93,6 +93,25 @@ const searchKeyHandlers: Record<string, SearchKeyHandler> = {
   up: (state) => moveSearchSelection(state, -1),
 };
 
+const searchControlKeyAliases: Record<string, string> = {
+  "C-j": "ctrl+j",
+  "C-k": "ctrl+k",
+  "enter:\n": "ctrl+j",
+  "return:\n": "ctrl+j",
+  "ctrl+j": "ctrl+j",
+  "ctrl+k": "ctrl+k",
+  "j:\n": "ctrl+j",
+  "k:\v": "ctrl+k",
+  "sequence:\n": "ctrl+j",
+  "sequence:\v": "ctrl+k",
+};
+const searchCtrlKeyAliases: Record<string, string> = {
+  enter: "ctrl+j",
+  j: "ctrl+j",
+  k: "ctrl+k",
+  return: "ctrl+j",
+};
+
 export function createInitialAppState(query = ""): AppState {
   return appStateMachine.initial(query);
 }
@@ -604,8 +623,10 @@ function applySearchKey(state: SearchState, key: AppKey): AppState {
 }
 
 function searchKeyName(key: AppKey): string {
-  if (key.ctrl === true && key.name.length === 1) {
-    return `ctrl+${key.name}`;
+  const alias = getSearchKeyAlias(key);
+
+  if (alias !== undefined) {
+    return alias;
   }
 
   if (key.shift === true && key.name.length === 1) {
@@ -615,16 +636,38 @@ function searchKeyName(key: AppKey): string {
   return key.name;
 }
 
+function getSearchKeyAlias(key: AppKey): string | undefined {
+  if (key.ctrl === true) {
+    return getSearchCtrlKeyAlias(key);
+  }
+
+  return (
+    searchControlKeyAliases[`sequence:${key.sequence ?? ""}`] ??
+    searchControlKeyAliases[`${key.name}:${key.sequence ?? ""}`] ??
+    searchControlKeyAliases[key.name]
+  );
+}
+
+function getSearchCtrlKeyAlias(key: AppKey): string {
+  return (
+    searchCtrlKeyAliases[key.name] ??
+    searchControlKeyAliases[key.name] ??
+    (key.name.length === 1 ? `ctrl+${key.name}` : key.name)
+  );
+}
+
 function applySearchTextInput(state: SearchState, key: AppKey): SearchState {
-  if (
-    key.ctrl === true ||
-    key.sequence === undefined ||
-    key.sequence.length !== 1
-  ) {
+  if (key.ctrl === true || isPrintableInputSequence(key.sequence) === false) {
     return state;
   }
 
   return updateSearchQuery(state, `${state.query}${key.sequence}`);
+}
+
+function isPrintableInputSequence(
+  sequence: string | undefined,
+): sequence is string {
+  return sequence !== undefined && sequence.length === 1 && sequence >= " ";
 }
 
 function moveSearchSelection(state: SearchState, delta: number): SearchState {
