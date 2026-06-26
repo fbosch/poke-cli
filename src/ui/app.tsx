@@ -143,6 +143,10 @@ function DetailView({
   }
 
   if (state.status === "loading") {
+    if (state.previousQuery.length === 0) {
+      return <InitialDetailLoadingView species={state.species} />;
+    }
+
     return (
       <SearchView
         query={state.previousQuery}
@@ -152,6 +156,20 @@ function DetailView({
   }
 
   return <DetailErrorView state={state} />;
+}
+
+function InitialDetailLoadingView({ species }: { species: SpeciesIndexEntry }) {
+  return (
+    <DetailScreen>
+      <PokedexCard>
+        <DetailCardTitle
+          left={`#${species.dexNumber.toString().padStart(3, "0")} ${species.name}`}
+          right=""
+        />
+        <text> </text>
+      </PokedexCard>
+    </DetailScreen>
+  );
 }
 
 function usePokemonDetailLoad({
