@@ -25,7 +25,7 @@ import {
 } from "./PokemonSpritePanel";
 
 const detailInfoPanelWidth = 53;
-const detailSpritePanelHeight = 17;
+const detailSpritePanelHeight = 18;
 const detailSpritePanelWidth = 42;
 
 export type LoadedDetailViewProps = {
@@ -105,7 +105,7 @@ export function LoadedDetailView({
             />
           </box>
           <box style={{ flexDirection: "column", width: detailInfoPanelWidth }}>
-            <DetailPanel minHeight={7} width={detailInfoPanelWidth}>
+            <DetailPanel minHeight={8} width={detailInfoPanelWidth}>
               <FlavorTextPanel
                 detail={detail}
                 selectedIndex={descriptionIndex}
@@ -277,10 +277,11 @@ function padAbilities(
   abilities: PokemonDetail["abilities"],
   minLength: number,
 ): Array<PokemonDetail["abilities"][number] | undefined> {
-  return [
-    ...abilities,
-    ...Array.from({ length: Math.max(0, minLength - abilities.length) }),
-  ];
+  const padding: undefined[] = Array.from({
+    length: Math.max(0, minLength - abilities.length),
+  });
+
+  return [...abilities, ...padding];
 }
 
 function DetailOverlays({

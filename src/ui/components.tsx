@@ -147,6 +147,7 @@ export function Modal({
           titleWidth={width - 4}
           {...(rightWidth === undefined ? {} : { rightWidth })}
         />
+        <text> </text>
         {children}
       </box>
     </>
