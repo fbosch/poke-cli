@@ -17,13 +17,15 @@ const pokespriteBaseUrl =
 const pokespriteMetadataUrl = `${pokespriteBaseUrl}data/pokemon.json`;
 const scarletVioletSpriteBaseUrl =
   "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/";
+const pokeApiSpriteBaseUrl =
+  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/";
 const scarletVioletFirstDexNumber = 906;
 const scarletVioletDefaultSpriteSlugs: Record<string, string> = {
   ogerpon: "ogerpon-teal-mask",
   squawkabilly: "squawkabilly-green-plumage",
 };
 
-type PokeSpriteSource = "gen-8" | "scarlet-violet";
+type PokeSpriteSource = "gen-8" | "pokeapi-sprites" | "scarlet-violet";
 
 export type PokeSpriteMetadataQueryKey = readonly [
   "pokesprite-metadata",
@@ -288,7 +290,18 @@ export function resolvePokemonFormPokeSpriteAsset(
   form?: PokemonForm,
   shiny = false,
 ): PokeSpriteAssetReference {
-  return resolvePokeSpriteAsset(metadata, species, formKey(form), shiny);
+  const key = formKey(form);
+  const asset = resolveOptionalPokeSpriteAsset(metadata, species, key, shiny);
+  if (asset !== undefined) {
+    return asset;
+  }
+
+  const fallback = resolvePokeApiSpriteAsset(metadata, species, form, shiny);
+  if (fallback !== undefined) {
+    return fallback;
+  }
+
+  throw missingPokeSpriteFormError(metadata, species, key);
 }
 
 function formKey(form: PokemonForm | undefined): string {
@@ -301,20 +314,37 @@ export function resolvePokeSpriteAsset(
   formKey: string,
   shiny = false,
 ): PokeSpriteAssetReference {
+  const asset = resolveOptionalPokeSpriteAsset(
+    metadata,
+    species,
+    formKey,
+    shiny,
+  );
+  if (asset !== undefined) {
+    return asset;
+  }
+
+  throw missingPokeSpriteFormError(metadata, species, formKey);
+}
+
+function resolveOptionalPokeSpriteAsset(
+  metadata: PokeSpriteMetadata,
+  species: SpeciesIndexEntry,
+  formKey: string,
+  shiny: boolean,
+): PokeSpriteAssetReference | undefined {
   const entry = metadata[dexKey(species.dexNumber)];
   if (pokeSpriteSourceForSpecies(species) === "scarlet-violet") {
     return resolveScarletVioletSpriteAsset(entry, species, formKey, shiny);
   }
 
   if (entry === undefined) {
-    throw new Error(`PokeSprite metadata missing #${species.dexNumber}`);
+    return undefined;
   }
 
   const form = entry.forms[formKey];
   if (form === undefined) {
-    throw new Error(
-      `PokeSprite metadata missing ${entry.slug} form ${formKey}`,
-    );
+    return undefined;
   }
 
   const resolvedFormKey = form.isAliasOf ?? formKey;
@@ -328,6 +358,66 @@ export function resolvePokeSpriteAsset(
     source: "gen-8",
     url: `${pokespriteBaseUrl}pokemon-gen8/${shiny ? "shiny" : "regular"}/${slug}.png`,
   };
+}
+
+function resolvePokeApiSpriteAsset(
+  metadata: PokeSpriteMetadata,
+  species: SpeciesIndexEntry,
+  form: PokemonForm | undefined,
+  shiny: boolean,
+): PokeSpriteAssetReference | undefined {
+  if (form === undefined || form.isDefault) {
+    return undefined;
+  }
+
+  const pokemonId = pokemonIdFromUrl(form.pokemonUrl);
+  if (pokemonId === undefined) {
+    return undefined;
+  }
+
+  const entry = metadata[dexKey(species.dexNumber)];
+  const fallbackMetadata =
+    entry ??
+    ({
+      dexNumber: species.dexNumber,
+      forms: {},
+      name: species.name,
+      slug: species.slug,
+    } satisfies PokeSpritePokemonMetadata);
+
+  return {
+    formKey: form.spriteFormKey,
+    metadata: fallbackMetadata,
+    shiny,
+    slug: pokemonId.toString(),
+    source: "pokeapi-sprites",
+    url: `${pokeApiSpriteBaseUrl}pokemon/${shiny ? "shiny/" : ""}${pokemonId.toString()}.png`,
+  };
+}
+
+function pokemonIdFromUrl(url: string): number | undefined {
+  let pathname: string;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    return undefined;
+  }
+
+  const id = pathname?.match(/\/pokemon\/(\d+)\/?$/)?.[1];
+  return id === undefined ? undefined : Number.parseInt(id, 10);
+}
+
+function missingPokeSpriteFormError(
+  metadata: PokeSpriteMetadata,
+  species: SpeciesIndexEntry,
+  formKey: string,
+): Error {
+  const entry = metadata[dexKey(species.dexNumber)];
+  if (entry === undefined) {
+    return new Error(`PokeSprite metadata missing #${species.dexNumber}`);
+  }
+
+  return new Error(`PokeSprite metadata missing ${entry.slug} form ${formKey}`);
 }
 
 function resolveScarletVioletSpriteAsset(

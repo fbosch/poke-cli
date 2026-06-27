@@ -347,6 +347,66 @@ test("maps Pokemon Forms to PokeSprite regular and shiny assets", () => {
   });
 });
 
+test("falls back to PokeAPI sprites for unsupported Pokemon forms", () => {
+  const metadata = parsePokeSpriteMetadata({
+    ...pokespritePokemonMetadata,
+    "036": {
+      idx: "036",
+      name: { eng: "Clefable" },
+      slug: { eng: "clefable" },
+      "gen-8": {
+        forms: {
+          $: { has_female: false, has_right: false },
+        },
+      },
+    },
+  });
+  const clefable =
+    findExactSpecies("clefable") ?? throwMissingSpecies("clefable");
+  const mega = {
+    displayName: "Clefable Mega",
+    isDefault: false,
+    pokemonName: "clefable-mega",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/10278/",
+    spriteFormKey: "mega",
+  };
+
+  expect(
+    resolvePokemonFormPokeSpriteAsset(metadata, clefable, mega),
+  ).toMatchObject({
+    formKey: "mega",
+    shiny: false,
+    slug: "10278",
+    source: "pokeapi-sprites",
+    url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10278.png",
+  });
+  expect(
+    resolvePokemonFormPokeSpriteAsset(metadata, clefable, mega, true),
+  ).toMatchObject({
+    formKey: "mega",
+    shiny: true,
+    slug: "10278",
+    source: "pokeapi-sprites",
+    url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/10278.png",
+  });
+});
+
+test("keeps failing when unsupported Pokemon forms cannot use the fallback", () => {
+  const metadata = parsePokeSpriteMetadata(pokespritePokemonMetadata);
+  const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
+  const missing = {
+    displayName: "Pikachu Missing",
+    isDefault: false,
+    pokemonName: "pikachu-missing",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/pikachu-missing/",
+    spriteFormKey: "missing",
+  };
+
+  expect(() =>
+    resolvePokemonFormPokeSpriteAsset(metadata, pikachu, missing),
+  ).toThrow("PokeSprite metadata missing pikachu form missing");
+});
+
 test("keeps previous rendered Sprite only across same-species presentation changes", () => {
   const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
   const bulbasaur =

@@ -2,6 +2,7 @@ import { RGBA, TextAttributes } from "@opentui/core";
 
 export const colors = {
   accent: RGBA.fromIndex(1),
+  error: RGBA.fromHex("#ff6b6b"),
   genderFemale: RGBA.fromHex("#f472b6"),
   genderMale: RGBA.fromHex("#60a5fa"),
   indicatorBlue: RGBA.fromIndex(4),

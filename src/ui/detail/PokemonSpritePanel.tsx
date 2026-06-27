@@ -65,7 +65,7 @@ export function PokemonSpritePanel({
     }
 
     if (image.isError) {
-      return <PokemonSpriteFallback error={image.error} />;
+      return <PokemonSpriteFallback />;
     }
 
     return <PokemonSpriteLoading />;
@@ -76,7 +76,7 @@ export function PokemonSpritePanel({
   }
 
   if (sprite.isError) {
-    return <PokemonSpriteFallback error={sprite.error} />;
+    return <PokemonSpriteFallback />;
   }
 
   return <PokemonSpriteLoading />;
@@ -224,7 +224,7 @@ function PokemonSpriteLoading() {
   );
 }
 
-export function PokemonSpriteFallback({ error }: { error: unknown }) {
+export function PokemonSpriteFallback() {
   return (
     <box
       style={{
@@ -240,14 +240,6 @@ export function PokemonSpriteFallback({ error }: { error: unknown }) {
       </text>
     </box>
   );
-}
-
-function spriteErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.length > 0) {
-    return error.message;
-  }
-
-  return "Sprite resources could not be loaded or read from cache.";
 }
 
 export function PokemonSpriteArtwork({ sprite }: { sprite: RenderedSprite }) {

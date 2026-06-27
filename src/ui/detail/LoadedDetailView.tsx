@@ -16,6 +16,7 @@ import {
 import { colors, textStyles } from "../design-tokens";
 import { AbilityViewer } from "./AbilityViewer";
 import { DamageTakenPanel } from "./DamageTakenPanel";
+import { DetailErrorModal } from "./DetailErrorModal";
 import { DetailPanel } from "./DetailPanel";
 import { EvolutionViewer } from "./EvolutionViewer";
 import { FlavorTextPanel } from "./FlavorTextPanel";
@@ -100,12 +101,6 @@ export function LoadedDetailView({
           }
           rightWidth={typeLabelsWidth(detail.types)}
         />
-        {errorMessage !== undefined ? (
-          <text fg={colors.muted} attributes={textStyles.muted}>
-            Could not load next Detail: {errorMessage}. Press r to retry or / to
-            search.
-          </text>
-        ) : null}
         <box style={{ alignItems: "flex-start", flexDirection: "row", gap: 1 }}>
           <box
             border
@@ -128,6 +123,7 @@ export function LoadedDetailView({
               species={loadedSpecies}
               terminalImagesEnabled={
                 terminalImagesEnabled &&
+                errorMessage === undefined &&
                 !abilityViewerOpen &&
                 !evolutionViewerOpen &&
                 formSelectorSelectedIndex === undefined
@@ -222,6 +218,12 @@ export function LoadedDetailView({
         onCloseOverlay={onCloseOverlay}
         onSelectSpecies={onSelectSpecies}
       />
+      {errorMessage === undefined ? null : (
+        <DetailErrorModal
+          message={errorMessage}
+          title="Could Not Load Detail"
+        />
+      )}
       <LoadedDetailFooter
         hasAlternateForms={detail.forms.length > 1}
         shiny={shiny}

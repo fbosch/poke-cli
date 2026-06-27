@@ -73,7 +73,7 @@ type PokeApiEvolutionChainNode = {
 export type PokeApiEvolutionDetail = {
   base_form?: { name: string; url: string } | null | undefined;
   evolved_form?: { name: string; url: string } | null | undefined;
-  gender?: string | null | undefined;
+  gender?: number | null | undefined;
   held_item?: { name: string; url: string } | null | undefined;
   item?: { name: string; url: string } | null | undefined;
   known_move?: { name: string; url: string } | null | undefined;
@@ -210,7 +210,7 @@ const optionalNamedResourceSchema = namedResourceSchema.nullable().optional();
 const evolutionDetailSchema = z.object({
   base_form: optionalNamedResourceSchema,
   evolved_form: optionalNamedResourceSchema,
-  gender: z.string().nullable().optional(),
+  gender: z.number().nullable().optional(),
   held_item: optionalNamedResourceSchema,
   item: optionalNamedResourceSchema,
   known_move: optionalNamedResourceSchema,

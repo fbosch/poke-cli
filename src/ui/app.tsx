@@ -39,7 +39,7 @@ import {
   KeyHints,
   PokedexCard,
 } from "./components";
-import { colors, textStyles } from "./design-tokens";
+import { colors } from "./design-tokens";
 import {
   DexNavigationButtons,
   LoadedDetailView,
@@ -52,6 +52,10 @@ import {
   detailSpritePanelWidth,
   detailStatsPanelWidth,
 } from "./detail/LoadedDetailView";
+import {
+  DetailErrorBoundary,
+  DetailErrorModal,
+} from "./detail/DetailErrorModal";
 import { SearchView } from "./search/SearchView";
 import { useTerminalImageSupport } from "./useTerminalImageSupport";
 import {
@@ -262,13 +266,15 @@ function DetailView({
   });
 
   return (
-    <DetailViewContent
-      onCloseOverlay={onCloseOverlay}
-      onNavigate={onNavigate}
-      onSelectSpecies={onSelectSpecies}
-      state={state}
-      terminalImagesEnabled={terminalImagesEnabled}
-    />
+    <DetailErrorBoundary resetKey={detailErrorBoundaryResetKey(state)}>
+      <DetailViewContent
+        onCloseOverlay={onCloseOverlay}
+        onNavigate={onNavigate}
+        onSelectSpecies={onSelectSpecies}
+        state={state}
+        terminalImagesEnabled={terminalImagesEnabled}
+      />
+    </DetailErrorBoundary>
   );
 }
 
@@ -475,6 +481,14 @@ function detailTargetsMatch(
   );
 }
 
+function detailErrorBoundaryResetKey(state: DetailState): string {
+  return [
+    state.species.slug,
+    pokemonFormTargetKey(state.form),
+    state.retryToken.toString(),
+  ].join(":");
+}
+
 function usePokemonSpritePrefetch({
   enabled,
   form,
@@ -638,18 +652,13 @@ function getFormSelectorSelectedIndex(state: DetailState): number | undefined {
 function DetailErrorView({ state }: { state: DetailState }) {
   return (
     <DetailScreen>
-      <PokedexCard>
-        <DetailCardTitle
-          left={`Could not load #${state.species.dexNumbers[1] ?? state.species.dexNumbers[0]} ${state.species.name}`}
-          right="Recoverable"
-        />
-        <box style={{ flexDirection: "column", gap: 1, padding: 1 }}>
-          <text fg={colors.muted} attributes={textStyles.muted}>
-            {state.errorMessage ??
-              "Detail data is unavailable. If offline, this species is not cached yet."}
-          </text>
-        </box>
-      </PokedexCard>
+      <DetailErrorModal
+        message={
+          state.errorMessage ??
+          "Detail data is unavailable. If offline, this species is not cached yet."
+        }
+        title={`Could Not Load #${state.species.dexNumbers[1] ?? state.species.dexNumbers[0]} ${state.species.name}`}
+      />
       <InstructionFooter>
         <KeyHints
           hints={[

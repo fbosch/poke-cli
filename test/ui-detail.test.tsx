@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { isValidElement } from "react";
 import { QueryDebugPanelView } from "../src/ui/QueryDebugPanel";
 import { DamageTakenPanel } from "../src/ui/detail/DamageTakenPanel";
+import { DetailErrorModal } from "../src/ui/detail/DetailErrorModal";
 import {
   EvolutionViewer,
   buildEvolutionFlowchartLinks,
@@ -73,7 +74,7 @@ test("renders inline image sprite artwork", () => {
 });
 
 test("renders recoverable sprite-specific errors", () => {
-  const element = PokemonSpriteFallback({ error: new Error("sprite offline") });
+  const element = PokemonSpriteFallback();
 
   expect(element).toBeDefined();
   expect(isValidElement(element)).toBe(true);
@@ -99,6 +100,16 @@ test("renders query debug panel entries", () => {
         updated: "0s ago",
       },
     ],
+  });
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+});
+
+test("renders detail errors in a modal", () => {
+  const element = DetailErrorModal({
+    message: "Invalid input",
+    title: "Could Not Load Detail",
   });
 
   expect(element).toBeDefined();

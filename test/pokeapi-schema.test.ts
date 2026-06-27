@@ -48,6 +48,7 @@ test("parses consumed Evolution Chain fields", () => {
           {
             evolution_details: [
               {
+                gender: 1,
                 min_level: 22,
                 trigger: {
                   name: "level-up",
