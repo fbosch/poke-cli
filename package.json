@@ -1,6 +1,5 @@
 {
   "name": "pkdx",
-  "private": true,
   "type": "module",
   "bin": {
     "pkdx": "./src/cli.tsx"

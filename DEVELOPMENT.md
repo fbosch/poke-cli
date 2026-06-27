@@ -1,0 +1,113 @@
+# Development
+
+Development uses Bun as the runtime, package manager, test runner, and build driver.
+
+## Setup
+
+```bash
+bun install
+```
+
+The repo also includes a `devenv.sh` environment with Bun, Git, Zig, Nix language support, and TypeScript language support:
+
+```bash
+devenv shell
+bun install
+```
+
+## Run Locally
+
+```bash
+bun run dev
+```
+
+Start with an initial query:
+
+```bash
+bun run dev pikachu
+```
+
+Run the CLI entrypoint directly:
+
+```bash
+bun run src/cli.tsx charizard
+```
+
+## Build
+
+Compile the app to `dist/pkdx`:
+
+```bash
+bun run build
+```
+
+Set `PKDX_BUILD_TARGET` to pass a Bun compile target:
+
+```bash
+PKDX_BUILD_TARGET=bun-linux-x64 bun run build
+```
+
+Smoke-test the compiled binary:
+
+```bash
+bun run smoke:binary
+```
+
+## Validation
+
+Main local quality gate:
+
+```bash
+bun run check
+```
+
+Other useful commands:
+
+```bash
+bun test
+bun run typecheck
+bun run typecheck:native
+bun run format:check
+bun run lint
+bun run bench
+bun run ci
+```
+
+For OpenSpec work on the active rebuild change:
+
+```bash
+bun run openspec validate rebuild-terminal-pokedex
+```
+
+For devenv changes:
+
+```bash
+devenv test
+```
+
+## Generated Data
+
+Search uses generated species indexes in `src/search/`. Regenerate them when search source data or alias overrides change:
+
+```bash
+bun run generate:index
+```
+
+PokeAPI types are generated from the upstream OpenAPI document:
+
+```bash
+bun run generate:pokeapi-types
+```
+
+Do not manually edit `src/pokeapi/generated.ts`; regenerate it instead.
+
+## Project Notes
+
+- `src/cli.tsx` parses CLI options and starts the OpenTUI renderer.
+- `src/ui/` contains the React/OpenTUI interface.
+- `src/app-state.ts` owns search/detail state transitions and key handling.
+- `src/search/` owns species index lookup and fuzzy search.
+- `src/pokemon-detail.ts` and `src/pokeapi/` load and shape PokeAPI data.
+- `src/pokesprite.ts`, `src/sprite-rendering.ts`, and `src/terminal-images.ts` resolve and render sprites.
+- `docs/adr/` records accepted project decisions.
+- `CONTEXT.md` defines the domain language used in the codebase.
