@@ -680,6 +680,43 @@ test("Detail next navigation carries Alolan form to Ninetales", () => {
   expectAlolanNinetalesLoaded(loaded);
 });
 
+test("Detail next navigation carries Galarian form to Rapidash", () => {
+  const state = loadedGalarianPonytaDetailState();
+  const next = applyAppKey(state, { name: "right" });
+  const loaded = detailLoadSucceeded(
+    next as DetailState,
+    findExactSpecies("rapidash") ?? throwMissingSpecies("rapidash"),
+    galarianRapidashDetail,
+  );
+
+  expect(next).toMatchObject({
+    screen: "detail",
+    form: {
+      pokemonName: "ponyta-galar",
+      spriteFormKey: "galar",
+    },
+    species: { slug: "rapidash" },
+    status: "loading",
+  });
+  expect(loaded).toMatchObject({
+    screen: "detail",
+    detail: {
+      detail: {
+        form: {
+          pokemonName: "rapidash-galar",
+          spriteFormKey: "galar",
+        },
+        name: "Rapidash Galar",
+      },
+    },
+    form: {
+      pokemonName: "rapidash-galar",
+      spriteFormKey: "galar",
+    },
+    status: "ready",
+  });
+});
+
 test("Detail evolution selection carries Alolan form to Ninetales", () => {
   const state = loadedAlolanVulpixDetailState();
   const ninetales =
@@ -868,6 +905,25 @@ const alolanNinetalesForm = pokemonForm(
   "ninetales-alola",
   "alola",
 );
+const ponytaDefaultForm = pokemonForm("Ponyta (Default)", true, "ponyta", "$");
+const galarianPonytaForm = pokemonForm(
+  "Ponyta Galar",
+  false,
+  "ponyta-galar",
+  "galar",
+);
+const rapidashDefaultForm = pokemonForm(
+  "Rapidash (Default)",
+  true,
+  "rapidash",
+  "$",
+);
+const galarianRapidashForm = pokemonForm(
+  "Rapidash Galar",
+  false,
+  "rapidash-galar",
+  "galar",
+);
 const vulpixEvolutionChain = {
   root: {
     evolvesTo: [
@@ -881,6 +937,21 @@ const vulpixEvolutionChain = {
     method: undefined,
     name: "Vulpix Alola",
     speciesName: "Vulpix",
+  },
+};
+const ponytaEvolutionChain = {
+  root: {
+    evolvesTo: [
+      {
+        evolvesTo: [],
+        method: "level 40",
+        name: "Rapidash Galar",
+        speciesName: "Rapidash",
+      },
+    ],
+    method: undefined,
+    name: "Ponyta Galar",
+    speciesName: "Ponyta",
   },
 };
 const alolanVulpixDetail = pokemonDetailWithForms(
@@ -897,6 +968,18 @@ const defaultNinetalesDetail = pokemonDetailWithForms(
   "Ninetales",
   [ninetalesDefaultForm],
   ninetalesDefaultForm,
+);
+const galarianPonytaDetail = pokemonDetailWithForms(
+  "Ponyta Galar",
+  [ponytaDefaultForm, galarianPonytaForm],
+  galarianPonytaForm,
+  ponytaEvolutionChain,
+);
+const galarianRapidashDetail = pokemonDetailWithForms(
+  "Rapidash Galar",
+  [rapidashDefaultForm, galarianRapidashForm],
+  galarianRapidashForm,
+  ponytaEvolutionChain,
 );
 
 function loadedAlolanVulpixDetailState(): DetailState {
@@ -920,6 +1003,16 @@ function loadedAlolanNinetalesDetailState(): DetailState {
   return detailLoadSucceeded(loading, ninetales, alolanNinetalesDetail);
 }
 
+function loadedGalarianPonytaDetailState(): DetailState {
+  const ponyta = findExactSpecies("ponyta") ?? throwMissingSpecies("ponyta");
+  const loading = {
+    ...(createInitialAppState("ponyta") as DetailState),
+    form: galarianPonytaForm,
+  };
+
+  return detailLoadSucceeded(loading, ponyta, galarianPonytaDetail);
+}
+
 function pokemonForm(
   displayName: string,
   isDefault: boolean,
@@ -939,10 +1032,11 @@ function pokemonDetailWithForms(
   name: string,
   forms: PokemonForm[],
   form: PokemonForm,
+  evolutionChain = vulpixEvolutionChain,
 ): PokemonDetail {
   return {
     ...pikachuDetail,
-    evolutionChain: vulpixEvolutionChain,
+    evolutionChain,
     form,
     forms,
     name,

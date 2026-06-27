@@ -4,7 +4,6 @@ import { colors, textStyles } from "./design-tokens";
 export const detailCardWidth = 100;
 const detailTitleWidth = 94;
 
-const statBarWidth = 22;
 const statColors: Record<string, (typeof colors)[keyof typeof colors]> = {
   Attack: colors.statAttack,
   Defense: colors.statDefense,
@@ -281,9 +280,17 @@ export function typeLabelsWidth(types: string[]): number {
   }, 0);
 }
 
-export function StatBar({ name, value }: { name: string; value: number }) {
-  const filled = Math.max(1, Math.min(statBarWidth, Math.round(value / 8)));
-  const empty = statBarWidth - filled;
+export function StatBar({
+  name,
+  value,
+  width,
+}: {
+  name: string;
+  value: number;
+  width: number;
+}) {
+  const filled = Math.max(1, Math.min(width, Math.round(value / 8)));
+  const empty = width - filled;
 
   return (
     <span>

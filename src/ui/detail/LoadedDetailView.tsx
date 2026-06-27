@@ -34,6 +34,11 @@ export const detailFlavorPanelHeight =
 export const detailStatsPanelWidth = 45;
 export const detailDamagePanelWidth = 50;
 export const detailLowerPanelHeight = 10;
+const detailStatsPanelContentWidth = detailStatsPanelWidth - 4;
+const detailStatLabelWidth = 11;
+const detailStatValueWidth = 5;
+const detailStatBarWidth =
+  detailStatsPanelContentWidth - detailStatLabelWidth - detailStatValueWidth;
 
 export type LoadedDetailViewProps = {
   abilityViewerOpen: boolean;
@@ -68,6 +73,8 @@ export function LoadedDetailView({
 }: LoadedDetailViewProps) {
   const previousSpecies = getSpeciesByDexDelta(navigationSpecies, -1);
   const nextSpecies = getSpeciesByDexDelta(navigationSpecies, 1);
+  const statTotal = detail.stats.reduce((total, stat) => total + stat.base, 0);
+  const statTotalLabel = statTotal.toString();
 
   return (
     <DetailScreen>
@@ -168,13 +175,28 @@ export function LoadedDetailView({
             height={detailLowerPanelHeight}
             width={detailStatsPanelWidth}
           >
-            <text attributes={textStyles.active}>Stats</text>
+            <text attributes={textStyles.active}>
+              <span>Stats</span>
+              <span>
+                {" ".repeat(
+                  Math.max(
+                    1,
+                    detailStatsPanelContentWidth - 5 - statTotalLabel.length,
+                  ),
+                )}
+              </span>
+              <span fg={colors.muted}>{statTotalLabel}</span>
+            </text>
             <text> </text>
             {detail.stats.map((stat) => (
               <text key={stat.name}>
-                <span>{stat.name.padEnd(11)}</span>
+                <span>{stat.name.padEnd(detailStatLabelWidth)}</span>
                 <span> {stat.base.toString().padStart(3)} </span>
-                <StatBar name={stat.name} value={stat.base} />
+                <StatBar
+                  name={stat.name}
+                  value={stat.base}
+                  width={detailStatBarWidth}
+                />
               </text>
             ))}
           </DetailPanel>

@@ -236,13 +236,7 @@ export function PokemonSpriteFallback({ error }: { error: unknown }) {
       }}
     >
       <text fg={colors.muted} attributes={textStyles.muted}>
-        Sprite unavailable
-      </text>
-      <text fg={colors.muted} attributes={textStyles.muted}>
-        {spriteErrorMessage(error)}
-      </text>
-      <text fg={colors.muted} attributes={textStyles.muted}>
-        Detail data is still available.
+        Sprite Unavailable
       </text>
     </box>
   );

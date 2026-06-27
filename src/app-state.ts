@@ -660,31 +660,46 @@ function carryOverDetailForm(
     return undefined;
   }
 
-  return isSpeciesInLoadedEvolutionChain(state, species) ? form : undefined;
+  return isDirectEvolutionSpecies(state, species) ? form : undefined;
 }
 
-function isSpeciesInLoadedEvolutionChain(
+function isDirectEvolutionSpecies(
   state: DetailState,
   species: SpeciesIndexEntry,
 ): boolean {
   const root = state.detail?.detail.evolutionChain.root;
+  const current = state.species.name;
   if (root === undefined) {
     return false;
   }
 
-  return evolutionChainIncludesSpecies(root, species.name);
+  return evolutionChainIncludesDirectRelationship(root, current, species.name);
 }
 
-function evolutionChainIncludesSpecies(
+function evolutionChainIncludesDirectRelationship(
   evolution: PokemonEvolution,
+  currentSpeciesName: string,
   speciesName: string,
 ): boolean {
-  if ((evolution.speciesName ?? evolution.name) === speciesName) {
+  const currentName = evolution.speciesName ?? evolution.name;
+  const childNames = evolution.evolvesTo.map(
+    (child) => child.speciesName ?? child.name,
+  );
+
+  if (currentName === currentSpeciesName && childNames.includes(speciesName)) {
+    return true;
+  }
+
+  if (currentName === speciesName && childNames.includes(currentSpeciesName)) {
     return true;
   }
 
   return evolution.evolvesTo.some((child) =>
-    evolutionChainIncludesSpecies(child, speciesName),
+    evolutionChainIncludesDirectRelationship(
+      child,
+      currentSpeciesName,
+      speciesName,
+    ),
   );
 }
 
