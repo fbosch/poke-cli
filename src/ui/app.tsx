@@ -25,6 +25,7 @@ import {
   pokespriteCachedAssetQueryOptions,
   pokespriteRenderedSpriteQueryOptions,
 } from "../pokesprite";
+import { prepareTerminalSpriteImage } from "../terminal-images";
 import { QueryDebugPanel } from "./QueryDebugPanel";
 import {
   findExactSpecies,
@@ -53,6 +54,10 @@ import {
 } from "./detail/LoadedDetailView";
 import { SearchView } from "./search/SearchView";
 import { useTerminalImageSupport } from "./useTerminalImageSupport";
+import {
+  detailSpriteCanvasHeight,
+  detailSpriteCanvasWidth,
+} from "./detail/PokemonSpritePanel";
 
 type AppProps = {
   debug?: boolean;
@@ -488,7 +493,7 @@ function usePokemonSpritePrefetch({
   const terminalImageSupport = terminalImagesEnabled
     ? detectedTerminalImageSupport
     : undefined;
-  useQuery({
+  const cachedAsset = useQuery({
     ...pokespriteCachedAssetQueryOptions(species, queryClient, shiny, form),
     enabled: enabled && terminalImageSupport !== undefined,
   });
@@ -496,6 +501,25 @@ function usePokemonSpritePrefetch({
     ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
     enabled: enabled && terminalImageSupport === undefined,
   });
+  useEffect(() => {
+    if (cachedAsset.data === undefined || terminalImageSupport === undefined) {
+      return;
+    }
+
+    void prewarmTerminalSpriteImage(cachedAsset.data.filePath);
+  }, [cachedAsset.data, terminalImageSupport]);
+  useEffect(() => {
+    if (enabled === false || terminalImageSupport === undefined) {
+      return;
+    }
+
+    void queryClient
+      .fetchQuery(
+        pokespriteCachedAssetQueryOptions(species, queryClient, !shiny, form),
+      )
+      .then((asset) => prewarmTerminalSpriteImage(asset.filePath))
+      .catch(() => undefined);
+  }, [enabled, form, queryClient, shiny, species, terminalImageSupport]);
 }
 
 function useAbilityDetailsPreload({
@@ -583,15 +607,25 @@ function prefetchPokemonDetail(
     pokemonDetailQueryOptions(species, queryClient),
   );
   if (terminalImagesEnabled) {
-    void queryClient.prefetchQuery(
-      pokespriteCachedAssetQueryOptions(species, queryClient, shiny),
-    );
+    void queryClient
+      .fetchQuery(
+        pokespriteCachedAssetQueryOptions(species, queryClient, shiny),
+      )
+      .then((asset) => prewarmTerminalSpriteImage(asset.filePath))
+      .catch(() => undefined);
     return;
   }
 
   void queryClient.prefetchQuery(
     pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny),
   );
+}
+
+async function prewarmTerminalSpriteImage(filePath: string): Promise<void> {
+  await prepareTerminalSpriteImage(filePath, {
+    height: detailSpriteCanvasHeight,
+    width: detailSpriteCanvasWidth,
+  }).catch(() => undefined);
 }
 
 function getFormSelectorSelectedIndex(state: DetailState): number | undefined {

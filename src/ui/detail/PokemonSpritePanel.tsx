@@ -19,8 +19,8 @@ import {
 import { colors, textStyles } from "../design-tokens";
 import { useTerminalImageSupport } from "../useTerminalImageSupport";
 
-const detailSpriteCanvasHeight = 20;
-const detailSpriteCanvasWidth = 40;
+export const detailSpriteCanvasHeight = 20;
+export const detailSpriteCanvasWidth = 40;
 const detailSpriteImageId = 4242;
 const detailSpritePlacementId = 1;
 
