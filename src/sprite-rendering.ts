@@ -683,24 +683,17 @@ function encodeRgbaPng(
 }
 
 function pngHeaderData(width: number, height: number): Uint8Array {
-  const data = new Uint8Array(13);
+  const data = Uint8Array.of(0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 0, 0, 0);
   const view = new DataView(data.buffer);
   view.setUint32(0, width);
   view.setUint32(4, height);
-  data[8] = 8;
-  data[9] = 6;
-  data[10] = 0;
-  data[11] = 0;
-  data[12] = 0;
   return data;
 }
 
 function encodePngChunk(type: string, data: Uint8Array): Uint8Array {
   const chunk = new Uint8Array(12 + data.length);
   const view = new DataView(chunk.buffer);
-  const typeBytes = Uint8Array.from(
-    [...type].map((character) => character.charCodeAt(0)),
-  );
+  const typeBytes = new TextEncoder().encode(type);
   view.setUint32(0, data.length);
   chunk.set(typeBytes, 4);
   chunk.set(data, 8);

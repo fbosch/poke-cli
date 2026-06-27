@@ -18,6 +18,8 @@ export type PreparedTerminalImage = TerminalImageOptions & {
   filePath: string;
 };
 
+type PreparedTerminalImageMetadata = TerminalImageOptions;
+
 type TerminalEnvironment = Record<string, string | undefined>;
 type TerminalImageCapabilities = Pick<
   TerminalCapabilities,
@@ -25,6 +27,7 @@ type TerminalImageCapabilities = Pick<
 >;
 
 const kittyTerminalImageSupport: TerminalImageSupport = { protocol: "kitty" };
+const preparedImagePromises = new Map<string, Promise<PreparedTerminalImage>>();
 
 export function detectTerminalImageSupport(
   env: TerminalEnvironment = Bun.env,
@@ -70,16 +73,54 @@ export async function prepareTerminalSpriteImage(
   filePath: string,
   canvas: TerminalImageOptions,
 ): Promise<PreparedTerminalImage> {
+  const cacheKey = `${filePath}:${canvas.width.toString()}x${canvas.height.toString()}`;
+  const cached = preparedImagePromises.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const promise = prepareTerminalSpriteImageUncached(filePath, canvas).catch(
+    (error: unknown) => {
+      preparedImagePromises.delete(cacheKey);
+      throw error;
+    },
+  );
+  preparedImagePromises.set(cacheKey, promise);
+  return promise;
+}
+
+async function prepareTerminalSpriteImageUncached(
+  filePath: string,
+  canvas: TerminalImageOptions,
+): Promise<PreparedTerminalImage> {
+  const croppedFilePath = `${filePath}.opaque.png`;
+  const metadataFilePath = `${croppedFilePath}.json`;
+  const cachedMetadata =
+    await readPreparedTerminalImageMetadata(metadataFilePath);
+  if (
+    cachedMetadata !== undefined &&
+    (await Bun.file(croppedFilePath).exists())
+  ) {
+    return {
+      ...fitPngSpriteToTerminalCanvas(cachedMetadata, {
+        maxHeight: canvas.height,
+        maxWidth: canvas.width,
+      }),
+      filePath: croppedFilePath,
+    };
+  }
+
   const source = await Bun.file(filePath).arrayBuffer();
   const cropped = cropPngSpriteToOpaqueBounds(source);
   if (cropped === undefined) {
     return { ...canvas, filePath };
   }
 
-  const croppedFilePath = `${filePath}.opaque.png`;
-  if (!(await Bun.file(croppedFilePath).exists())) {
-    await Bun.write(croppedFilePath, cropped.source);
-  }
+  await Bun.write(croppedFilePath, cropped.source);
+  await Bun.write(
+    metadataFilePath,
+    JSON.stringify({ height: cropped.height, width: cropped.width }),
+  );
 
   return {
     ...fitPngSpriteToTerminalCanvas(cropped, {
@@ -88,6 +129,43 @@ export async function prepareTerminalSpriteImage(
     }),
     filePath: croppedFilePath,
   };
+}
+
+async function readPreparedTerminalImageMetadata(
+  filePath: string,
+): Promise<PreparedTerminalImageMetadata | undefined> {
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) {
+    return undefined;
+  }
+
+  const metadata = await file.json().catch(() => undefined);
+  if (isPreparedTerminalImageMetadata(metadata)) {
+    return metadata;
+  }
+
+  return undefined;
+}
+
+function isPreparedTerminalImageMetadata(
+  value: unknown,
+): value is PreparedTerminalImageMetadata {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  return (
+    hasPositiveFiniteNumber(value, "height") &&
+    hasPositiveFiniteNumber(value, "width")
+  );
+}
+
+function hasPositiveFiniteNumber(
+  value: object,
+  key: "height" | "width",
+): boolean {
+  const field = Object.getOwnPropertyDescriptor(value, key)?.value;
+  return typeof field === "number" && Number.isFinite(field) && field > 0;
 }
 
 export function terminalImagePlacementSequence({

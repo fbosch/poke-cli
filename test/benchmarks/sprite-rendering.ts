@@ -1,8 +1,16 @@
 import { deflateSync } from "node:zlib";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { renderPngSprite, xtermColorIndex } from "../../src/sprite-rendering";
+import { prepareTerminalSpriteImage } from "../../src/terminal-images";
 import { benchmarkResult } from "../support/benchmark";
 
 const iterations = Number(Bun.env.PKDX_SPRITE_BENCH_ITERATIONS ?? 500);
+const coldIterations = Number(
+  Bun.env.PKDX_SPRITE_BENCH_COLD_ITERATIONS ?? Math.min(iterations, 100),
+);
+const terminalImageCanvas = { height: 20, width: 40 };
 const transparent = [0, 0, 0, 0] satisfies Rgba;
 const red = [255, 0, 0, 255] satisfies Rgba;
 const blue = [0, 0, 255, 255] satisfies Rgba;
@@ -11,6 +19,12 @@ const yellow = [255, 255, 0, 255] satisfies Rgba;
 
 const smallSprite = createPatternPng(16, 16);
 const mediumSprite = createPatternPng(64, 64);
+const paddedMediumSprite = createPaddedPatternPng(80, 72, {
+  bottom: 8,
+  left: 6,
+  right: 6,
+  top: 8,
+});
 
 const benchmarks = [
   {
@@ -18,11 +32,11 @@ const benchmarks = [
     run: () => xtermColorIndex(128, 64, 192),
   },
   {
-    name: "render-png-small-16x16",
+    name: "ascii-render-small-16x16",
     run: () => renderPngSprite(smallSprite).rows.length,
   },
   {
-    name: "render-png-medium-64x64",
+    name: "ascii-render-medium-64x64",
     run: () => renderPngSprite(mediumSprite).rows.length,
   },
 ] as const;
@@ -44,7 +58,64 @@ const results = benchmarks.map((benchmark) => {
   return benchmarkResult(benchmark.name, iterations, start, checksum);
 });
 
+const temporaryDirectory = await mkdtemp(join(tmpdir(), "pkdx-sprite-bench-"));
+try {
+  results.push(
+    await benchmarkColdTerminalImagePreparation(temporaryDirectory),
+    await benchmarkWarmTerminalImagePreparation(temporaryDirectory),
+  );
+} finally {
+  await rm(temporaryDirectory, { force: true, recursive: true });
+}
+
 console.table(results);
+
+async function benchmarkColdTerminalImagePreparation(directory: string) {
+  const filePaths = await Promise.all(
+    Array.from({ length: coldIterations }, async (_, index) => {
+      const filePath = join(directory, `cold-${index.toString()}.png`);
+      await Bun.write(filePath, paddedMediumSprite);
+      return filePath;
+    }),
+  );
+
+  let checksum = 0;
+  const start = Bun.nanoseconds();
+  for (const filePath of filePaths) {
+    checksum += await prepareTerminalImageChecksum(filePath);
+  }
+
+  return benchmarkResult(
+    "builtin-image-prepare-cold-80x72",
+    coldIterations,
+    start,
+    checksum,
+  );
+}
+
+async function benchmarkWarmTerminalImagePreparation(directory: string) {
+  const filePath = join(directory, "warm.png");
+  await Bun.write(filePath, paddedMediumSprite);
+  await prepareTerminalImageChecksum(filePath);
+
+  let checksum = 0;
+  const start = Bun.nanoseconds();
+  for (let index = 0; index < iterations; index += 1) {
+    checksum += await prepareTerminalImageChecksum(filePath);
+  }
+
+  return benchmarkResult(
+    "builtin-image-prepare-warm-80x72",
+    iterations,
+    start,
+    checksum,
+  );
+}
+
+async function prepareTerminalImageChecksum(filePath: string): Promise<number> {
+  const image = await prepareTerminalSpriteImage(filePath, terminalImageCanvas);
+  return image.filePath.length + image.height + image.width;
+}
 
 type Rgba = readonly [red: number, green: number, blue: number, alpha: number];
 
@@ -55,6 +126,28 @@ function createPatternPng(width: number, height: number): ArrayBuffer {
     const y = Math.floor(index / width);
     return palette[(x + y) % palette.length] ?? transparent;
   });
+
+  return createRgbaPng(width, height, pixels);
+}
+
+function createPaddedPatternPng(
+  width: number,
+  height: number,
+  padding: { bottom: number; left: number; right: number; top: number },
+): ArrayBuffer {
+  const palette = [red, blue, green, yellow] as const;
+  const pixels: Rgba[] = Array.from(
+    { length: width * height },
+    () => transparent,
+  );
+  const bottom = height - padding.bottom;
+  const right = width - padding.right;
+
+  for (let y = padding.top; y < bottom; y += 1) {
+    for (let x = padding.left; x < right; x += 1) {
+      pixels[y * width + x] = palette[(x + y) % palette.length] ?? red;
+    }
+  }
 
   return createRgbaPng(width, height, pixels);
 }
