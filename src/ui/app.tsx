@@ -46,7 +46,7 @@ import {
   detailFactsPanelHeight,
   detailFlavorPanelHeight,
   detailInfoPanelWidth,
-  detailLowerPanelMinHeight,
+  detailLowerPanelHeight,
   detailSpritePanelHeight,
   detailSpritePanelWidth,
   detailStatsPanelWidth,
@@ -336,11 +336,11 @@ function InitialDetailLoadingView({ species }: { species: SpeciesIndexEntry }) {
         </box>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <SkeletonPanel
-            height={detailLowerPanelMinHeight}
+            height={detailLowerPanelHeight}
             width={detailStatsPanelWidth}
           />
           <SkeletonPanel
-            height={detailLowerPanelMinHeight}
+            height={detailLowerPanelHeight}
             width={detailDamagePanelWidth}
           />
         </box>

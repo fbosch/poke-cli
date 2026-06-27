@@ -33,7 +33,7 @@ export const detailFlavorPanelHeight =
   detailSpritePanelHeight - detailFactsPanelHeight;
 export const detailStatsPanelWidth = 45;
 export const detailDamagePanelWidth = 50;
-export const detailLowerPanelMinHeight = 10;
+export const detailLowerPanelHeight = 10;
 
 export type LoadedDetailViewProps = {
   abilityViewerOpen: boolean;
@@ -165,7 +165,7 @@ export function LoadedDetailView({
         </box>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <DetailPanel
-            minHeight={detailLowerPanelMinHeight}
+            height={detailLowerPanelHeight}
             width={detailStatsPanelWidth}
           >
             <text attributes={textStyles.active}>Stats</text>
@@ -180,7 +180,7 @@ export function LoadedDetailView({
           </DetailPanel>
           <DetailPanel
             key={`damage-${detail.dexNumber}-${detail.form.spriteFormKey}`}
-            minHeight={detailLowerPanelMinHeight}
+            height={detailLowerPanelHeight}
             width={detailDamagePanelWidth}
           >
             <DamageTakenPanel damageTaken={detail.damageTaken} />
