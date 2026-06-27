@@ -2,6 +2,7 @@ import type { KeyEvent } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import type { CliImageMode } from "../cli";
 import {
   applyAppKey,
   createInitialAppState,
@@ -53,11 +54,16 @@ import { SearchView } from "./search/SearchView";
 import { useTerminalImageSupport } from "./useTerminalImageSupport";
 
 type AppProps = {
+  imageMode?: CliImageMode;
   initialQuery?: string;
   onExit: () => void;
 };
 
-export function App({ initialQuery = "", onExit }: AppProps) {
+export function App({
+  imageMode = "builtin",
+  initialQuery = "",
+  onExit,
+}: AppProps) {
   const [state, setState] = useState(() => createInitialAppState(initialQuery));
 
   useKeyboard((key: KeyEvent) => {
@@ -131,6 +137,7 @@ export function App({ initialQuery = "", onExit }: AppProps) {
         onCloseOverlay={() => {
           setState((current) => applyAppKey(current, { name: "escape" }));
         }}
+        terminalImagesEnabled={imageMode === "builtin"}
       />
     );
   }
@@ -171,6 +178,7 @@ type DetailViewProps = {
   onNavigate: (delta: DetailNavigationDelta) => void;
   onSelectSpecies: (name: string) => void;
   state: DetailState;
+  terminalImagesEnabled: boolean;
 };
 
 type DetailLoadProps = Pick<
@@ -197,6 +205,7 @@ function DetailView({
   onNavigate,
   onSelectSpecies,
   state,
+  terminalImagesEnabled,
 }: DetailViewProps) {
   const detailTarget = useDebouncedDetailTarget(
     state.species,
@@ -214,11 +223,13 @@ function DetailView({
     form: detailTarget.form,
     shiny: state.shiny,
     species: detailTarget.species,
+    terminalImagesEnabled,
   });
   useAdjacentPokemonPrefetch({
     enabled: state.status !== "error",
     shiny: state.shiny,
     species: detailTarget.species,
+    terminalImagesEnabled,
   });
   useAbilityDetailsPreload({
     onAbilityDetailsLoadFailed,
@@ -241,6 +252,7 @@ function DetailView({
         onNavigate={onNavigate}
         onSelectSpecies={onSelectSpecies}
         shiny={state.shiny}
+        terminalImagesEnabled={terminalImagesEnabled}
       />
     );
   }
@@ -426,14 +438,19 @@ function usePokemonSpritePrefetch({
   form,
   shiny,
   species,
+  terminalImagesEnabled,
 }: {
   enabled: boolean;
   form: PokemonForm | undefined;
   shiny: boolean;
   species: SpeciesIndexEntry;
+  terminalImagesEnabled: boolean;
 }) {
   const queryClient = useQueryClient();
-  const terminalImageSupport = useTerminalImageSupport();
+  const detectedTerminalImageSupport = useTerminalImageSupport();
+  const terminalImageSupport = terminalImagesEnabled
+    ? detectedTerminalImageSupport
+    : undefined;
   useQuery({
     ...pokespriteCachedAssetQueryOptions(species, queryClient, shiny, form),
     enabled: enabled && terminalImageSupport !== undefined,
@@ -483,13 +500,18 @@ function useAdjacentPokemonPrefetch({
   enabled,
   shiny,
   species,
+  terminalImagesEnabled,
 }: {
   enabled: boolean;
   shiny: boolean;
   species: SpeciesIndexEntry;
+  terminalImagesEnabled: boolean;
 }) {
   const queryClient = useQueryClient();
-  const terminalImageSupport = useTerminalImageSupport();
+  const detectedTerminalImageSupport = useTerminalImageSupport();
+  const terminalImageSupport = terminalImagesEnabled
+    ? detectedTerminalImageSupport
+    : undefined;
   useEffect(() => {
     if (enabled === false) {
       return;

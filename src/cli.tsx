@@ -5,8 +5,11 @@ import { Root } from "./ui/root";
 
 export const searchScreenTitle = "Search";
 
+export type CliImageMode = "ascii" | "builtin";
+
 export type CliOptions = {
   debug: boolean;
+  imageMode: CliImageMode;
   initialQuery: string;
 };
 
@@ -17,10 +20,21 @@ export function getInitialSearchQuery(args: readonly string[]): string {
 export function parseCliOptions(args: readonly string[]): CliOptions {
   const queryArgs: string[] = [];
   let debug = false;
+  let imageMode: CliImageMode = "builtin";
 
   for (const arg of args) {
     if (arg === "--debug") {
       debug = true;
+      continue;
+    }
+
+    if (arg === "--images=ascii") {
+      imageMode = "ascii";
+      continue;
+    }
+
+    if (arg === "--images=builtin") {
+      imageMode = "builtin";
       continue;
     }
 
@@ -29,12 +43,13 @@ export function parseCliOptions(args: readonly string[]): CliOptions {
 
   return {
     debug,
+    imageMode,
     initialQuery: queryArgs.join(" ").trim(),
   };
 }
 
 export async function main(args = Bun.argv.slice(2)): Promise<void> {
-  const { debug, initialQuery } = parseCliOptions(args);
+  const { debug, imageMode, initialQuery } = parseCliOptions(args);
 
   if (process.env.PKDX_SMOKE_EXIT === "1") {
     process.stdout.write(
@@ -56,6 +71,7 @@ export async function main(args = Bun.argv.slice(2)): Promise<void> {
 
   root.render(
     <Root
+      imageMode={imageMode}
       initialQuery={initialQuery}
       onExit={() => {
         if (hasExited) {

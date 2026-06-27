@@ -6,21 +6,31 @@ import {
   persistedQueryMaxAge,
   queryCacheBuster,
 } from "../query-cache";
+import type { CliImageMode } from "../cli";
 import { App } from "./app";
 
 const persistQueryCache = Bun.env.NODE_ENV !== "development";
 const queryClient = createAppQueryClient();
 
 type RootProps = {
+  imageMode?: CliImageMode;
   initialQuery?: string;
   onExit: () => void;
 };
 
-export function Root({ initialQuery = "", onExit }: RootProps) {
+export function Root({
+  imageMode = "builtin",
+  initialQuery = "",
+  onExit,
+}: RootProps) {
   if (!persistQueryCache) {
     return (
       <QueryClientProvider client={queryClient}>
-        <App initialQuery={initialQuery} onExit={onExit} />
+        <App
+          imageMode={imageMode}
+          initialQuery={initialQuery}
+          onExit={onExit}
+        />
       </QueryClientProvider>
     );
   }
@@ -36,7 +46,7 @@ export function Root({ initialQuery = "", onExit }: RootProps) {
         persister,
       }}
     >
-      <App initialQuery={initialQuery} onExit={onExit} />
+      <App imageMode={imageMode} initialQuery={initialQuery} onExit={onExit} />
     </PersistQueryClientProvider>
   );
 }

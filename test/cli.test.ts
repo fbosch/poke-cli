@@ -103,11 +103,26 @@ test("uses launch arguments as the initial Search query", () => {
 test("parses debug flag without treating it as Search input", () => {
   expect(parseCliOptions(["--debug", "mr", "mime"])).toEqual({
     debug: true,
+    imageMode: "builtin",
     initialQuery: "mr mime",
   });
   expect(parseCliOptions(["pikachu"])).toEqual({
     debug: false,
+    imageMode: "builtin",
     initialQuery: "pikachu",
+  });
+});
+
+test("parses image mode flag without treating it as Search input", () => {
+  expect(parseCliOptions(["--debug", "--images=ascii", "clefable"])).toEqual({
+    debug: true,
+    imageMode: "ascii",
+    initialQuery: "clefable",
+  });
+  expect(parseCliOptions(["--images=builtin", "clefable"])).toEqual({
+    debug: false,
+    imageMode: "builtin",
+    initialQuery: "clefable",
   });
 });
 

@@ -48,6 +48,7 @@ export type LoadedDetailViewProps = {
   onNavigate: (delta: DetailNavigationDelta) => void;
   onSelectSpecies: (name: string) => void;
   shiny: boolean;
+  terminalImagesEnabled: boolean;
 };
 
 export function LoadedDetailView({
@@ -63,6 +64,7 @@ export function LoadedDetailView({
   onNavigate,
   onSelectSpecies,
   shiny,
+  terminalImagesEnabled,
 }: LoadedDetailViewProps) {
   const previousSpecies = getSpeciesByDexDelta(navigationSpecies, -1);
   const nextSpecies = getSpeciesByDexDelta(navigationSpecies, 1);
@@ -113,6 +115,7 @@ export function LoadedDetailView({
               shiny={shiny}
               species={loadedSpecies}
               terminalImagesEnabled={
+                terminalImagesEnabled &&
                 !abilityViewerOpen &&
                 !evolutionViewerOpen &&
                 formSelectorSelectedIndex === undefined
