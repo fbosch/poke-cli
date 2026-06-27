@@ -19,17 +19,20 @@ export type PokeApiPokemon = {
   height: number;
   name: GeneratedPokemon["name"];
   species: GeneratedPokemon["species"];
-  stats: Pick<GeneratedPokemonStat, "base_stat" | "stat">[];
+  stats: Pick<GeneratedPokemonStat, "base_stat" | "effort" | "stat">[];
   types: Pick<GeneratedPokemonType, "slot" | "type">[];
   weight: number;
 };
 
 export type PokeApiPokemonSpecies = Pick<
   GeneratedSpecies,
+  | "capture_rate"
   | "evolution_chain"
   | "egg_groups"
   | "flavor_text_entries"
   | "genera"
+  | "generation"
+  | "growth_rate"
   | "id"
   | "name"
   | "names"
@@ -105,6 +108,7 @@ const pokemonAbilitySchema = z.object({
 
 const pokemonStatSchema = z.object({
   base_stat: z.number(),
+  effort: z.number(),
   stat: namedResourceSchema,
 });
 
@@ -119,6 +123,7 @@ export const pokemonResourceSchema = z.object({
 });
 
 export const pokemonSpeciesResourceSchema = z.object({
+  capture_rate: z.number(),
   egg_groups: z.array(namedResourceSchema),
   evolution_chain: z.object({ url: z.string() }),
   form_descriptions: z.array(
@@ -135,12 +140,14 @@ export const pokemonSpeciesResourceSchema = z.object({
     }),
   ),
   gender_rate: z.number(),
+  generation: namedResourceSchema,
   genera: z.array(
     z.object({
       genus: z.string(),
       language: namedResourceSchema,
     }),
   ),
+  growth_rate: namedResourceSchema,
   id: z.number(),
   name: z.string(),
   names: z.array(

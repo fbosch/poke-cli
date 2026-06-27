@@ -26,6 +26,7 @@ type ResourceQueryClient = Pick<QueryClient, "fetchQuery">;
 
 export type PokemonDetail = {
   abilities: PokemonAbility[];
+  captureRate: number;
   damageTaken: DamageTaken;
   dexNumber: number;
   eggGroups: string[];
@@ -35,6 +36,8 @@ export type PokemonDetail = {
   form: PokemonForm;
   forms: PokemonForm[];
   genderRatio: PokemonGenderRatio;
+  generation: string;
+  growthRate: string;
   heightMeters: number;
   name: string;
   species: string;
@@ -261,6 +264,7 @@ export function buildPokemonDetail(
         name: formatResourceName(entry.ability.name),
         url: entry.ability.url,
       })),
+    captureRate: speciesResource.capture_rate,
     dexNumber: species.dexNumber,
     damageTaken: calculateDamageTaken(types),
     eggGroups: speciesResource.egg_groups.map((eggGroup) =>
@@ -272,6 +276,8 @@ export function buildPokemonDetail(
     form,
     forms: [...forms],
     genderRatio: formatGenderRatio(speciesResource.gender_rate),
+    generation: formatResourceName(speciesResource.generation.name),
+    growthRate: formatResourceName(speciesResource.growth_rate.name),
     heightMeters: pokemonResource.height / 10,
     name: form.isDefault
       ? (getEnglishSpeciesName(speciesResource) ?? species.name)

@@ -28,7 +28,7 @@ import {
 const detailInfoPanelWidth = 50;
 const detailSpritePanelHeight = 23;
 const detailSpritePanelWidth = 45;
-const detailFactsPanelHeight = 10;
+const detailFactsPanelHeight = 13;
 const detailFlavorPanelHeight =
   detailSpritePanelHeight - detailFactsPanelHeight;
 
@@ -137,6 +137,9 @@ export function LoadedDetailView({
                 label="Weight"
                 value={`${detail.weightKilograms.toFixed(1)} kg`}
               />
+              <FactRow label="Generation" value={detail.generation} />
+              <FactRow label="Growth" value={detail.growthRate} />
+              <FactRow label="Capture" value={detail.captureRate.toString()} />
               <AbilityRows abilities={detail.abilities} />
             </DetailPanel>
           </box>
