@@ -37,6 +37,14 @@ import { colors, textStyles } from "./design-tokens";
 import {
   DexNavigationButtons,
   LoadedDetailView,
+  detailDamagePanelWidth,
+  detailFactsPanelHeight,
+  detailFlavorPanelHeight,
+  detailInfoPanelWidth,
+  detailLowerPanelMinHeight,
+  detailSpritePanelHeight,
+  detailSpritePanelWidth,
+  detailStatsPanelWidth,
 } from "./detail/LoadedDetailView";
 import { SearchView } from "./search/SearchView";
 
@@ -230,15 +238,30 @@ function InitialDetailLoadingView({ species }: { species: SpeciesIndexEntry }) {
           right=""
         />
         <box style={{ alignItems: "flex-start", flexDirection: "row", gap: 1 }}>
-          <SkeletonPanel height={23} width={45} />
-          <box style={{ flexDirection: "column", width: 50 }}>
-            <SkeletonPanel height={13} width={50} />
-            <SkeletonPanel height={10} width={50} />
+          <SkeletonPanel
+            height={detailSpritePanelHeight}
+            width={detailSpritePanelWidth}
+          />
+          <box style={{ flexDirection: "column", width: detailInfoPanelWidth }}>
+            <SkeletonPanel
+              height={detailFlavorPanelHeight}
+              width={detailInfoPanelWidth}
+            />
+            <SkeletonPanel
+              height={detailFactsPanelHeight}
+              width={detailInfoPanelWidth}
+            />
           </box>
         </box>
         <box style={{ flexDirection: "row", gap: 1 }}>
-          <SkeletonPanel height={10} width={45} />
-          <SkeletonPanel height={10} width={50} />
+          <SkeletonPanel
+            height={detailLowerPanelMinHeight}
+            width={detailStatsPanelWidth}
+          />
+          <SkeletonPanel
+            height={detailLowerPanelMinHeight}
+            width={detailDamagePanelWidth}
+          />
         </box>
       </PokedexCard>
       <DexNavigationButtons

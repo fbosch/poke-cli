@@ -8,41 +8,45 @@ type GeneratedVersionGroup = components["schemas"]["VersionGroupDetail"];
 type GeneratedAbility = components["schemas"]["AbilityDetail"];
 type GeneratedEvolutionChain = components["schemas"]["EvolutionChainDetail"];
 type GeneratedPokemonAbility = GeneratedPokemon["abilities"][number];
-type GeneratedPokemonStat = GeneratedPokemon["stats"][number];
 type GeneratedPokemonType = GeneratedPokemon["types"][number];
 type GeneratedEvolutionChainSpecies =
   GeneratedEvolutionChain["chain"]["species"];
 type GeneratedFormDescription = GeneratedSpecies["form_descriptions"][number];
+type PokeApiNamedResource = { name: string; url: string };
 
 export type PokeApiPokemon = {
   abilities: Pick<GeneratedPokemonAbility, "ability" | "is_hidden" | "slot">[];
   height: number;
   name: GeneratedPokemon["name"];
   species: GeneratedPokemon["species"];
-  stats: Pick<GeneratedPokemonStat, "base_stat" | "effort" | "stat">[];
+  stats: {
+    base_stat: number;
+    effort: number;
+    stat: PokeApiNamedResource;
+  }[];
   types: Pick<GeneratedPokemonType, "slot" | "type">[];
   weight: number;
 };
 
 export type PokeApiPokemonSpecies = Pick<
   GeneratedSpecies,
-  | "capture_rate"
   | "evolution_chain"
   | "egg_groups"
   | "flavor_text_entries"
   | "genera"
-  | "generation"
-  | "growth_rate"
   | "id"
   | "name"
   | "names"
   | "varieties"
 > & {
+  capture_rate: number;
   form_descriptions: ({ description?: string | undefined } & Pick<
     GeneratedFormDescription,
     "language"
   >)[];
   gender_rate: number;
+  generation: PokeApiNamedResource;
+  growth_rate: PokeApiNamedResource;
 };
 
 export type PokeApiPokemonForm = Pick<

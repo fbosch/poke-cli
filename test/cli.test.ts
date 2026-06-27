@@ -39,6 +39,8 @@ const pikachuDetail: PokemonDetail = {
   },
   dexNumber: 25,
   eggGroups: ["Field", "Fairy"],
+  captureRate: 190,
+  evYield: [{ effort: 2, name: "Spe" }],
   evolutionChain: pikachuPokemonEvolutionChain,
   flavorText: "Mouse Pokemon.",
   flavorTexts: [
@@ -69,6 +71,8 @@ const pikachuDetail: PokemonDetail = {
     },
   ],
   genderRatio: { femalePercent: 50, kind: "gendered", malePercent: 50 },
+  generation: "Generation I",
+  growthRate: "Medium",
   heightMeters: 0.4,
   name: "Pikachu",
   species: "Mouse Pokemon",

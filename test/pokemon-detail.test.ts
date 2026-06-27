@@ -92,6 +92,7 @@ test("builds Default Representative PokemonDetail from validated PokeAPI resourc
         url: "https://pokeapi.co/api/v2/ability/31/",
       },
     ],
+    captureRate: 190,
     damageTaken: {
       resistances: [
         { multiplier: 0.5, type: "Electric" },
@@ -102,6 +103,7 @@ test("builds Default Representative PokemonDetail from validated PokeAPI resourc
     },
     dexNumber: 25,
     eggGroups: ["Field", "Fairy"],
+    evYield: [{ effort: 2, name: "Spe" }],
     evolutionChain: pikachuPokemonEvolutionChain,
     flavorText:
       "When several of these POKéMON gather, their electricity can build and cause lightning storms.",
@@ -114,6 +116,8 @@ test("builds Default Representative PokemonDetail from validated PokeAPI resourc
     form: defaultForm,
     forms,
     genderRatio: { femalePercent: 50, kind: "gendered", malePercent: 50 },
+    generation: "Generation I",
+    growthRate: "Medium",
     heightMeters: 0.4,
     name: "Pikachu",
     species: "Mouse Pokémon",

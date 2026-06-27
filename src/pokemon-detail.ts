@@ -30,6 +30,7 @@ export type PokemonDetail = {
   damageTaken: DamageTaken;
   dexNumber: number;
   eggGroups: string[];
+  evYield: PokemonEvYield[];
   evolutionChain: PokemonEvolutionChain;
   flavorText: string;
   flavorTexts: PokemonFlavorText[];
@@ -62,6 +63,11 @@ export type PokemonEvolution = {
   method: string | undefined;
   name: string;
   url?: string;
+};
+
+export type PokemonEvYield = {
+  effort: number;
+  name: string;
 };
 
 export type PokemonFlavorText = {
@@ -270,6 +276,12 @@ export function buildPokemonDetail(
     eggGroups: speciesResource.egg_groups.map((eggGroup) =>
       formatResourceName(eggGroup.name),
     ),
+    evYield: pokemonResource.stats
+      .filter((entry) => entry.effort > 0)
+      .map((entry) => ({
+        effort: entry.effort,
+        name: formatEvYieldStatName(entry.stat.name),
+      })),
     evolutionChain: buildPokemonEvolutionChain(evolutionChainResource),
     flavorText: flavorTexts[0]?.text ?? "No flavor text available.",
     flavorTexts,
@@ -701,6 +713,19 @@ function formatStatName(value: string): string {
     "special-attack": "Sp. Attack",
     "special-defense": "Sp. Defense",
     speed: "Speed",
+  };
+
+  return labels[value] ?? formatResourceName(value);
+}
+
+function formatEvYieldStatName(value: string): string {
+  const labels: Record<string, string> = {
+    attack: "Atk",
+    defense: "Def",
+    hp: "HP",
+    "special-attack": "SpA",
+    "special-defense": "SpD",
+    speed: "Spe",
   };
 
   return labels[value] ?? formatResourceName(value);

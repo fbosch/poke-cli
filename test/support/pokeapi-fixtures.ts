@@ -12,6 +12,7 @@ const languageEnglish = {
 };
 
 export const pikachuSpecies: PokeApiPokemonSpecies = {
+  capture_rate: 190,
   egg_groups: [
     {
       name: "field",
@@ -48,6 +49,10 @@ export const pikachuSpecies: PokeApiPokemonSpecies = {
       },
     },
   ],
+  generation: {
+    name: "generation-i",
+    url: "https://pokeapi.co/api/v2/generation/1/",
+  },
   gender_rate: 4,
   genera: [
     {
@@ -55,6 +60,10 @@ export const pikachuSpecies: PokeApiPokemonSpecies = {
       language: languageEnglish,
     },
   ],
+  growth_rate: {
+    name: "medium",
+    url: "https://pokeapi.co/api/v2/growth-rate/2/",
+  },
   id: 25,
   name: "pikachu",
   names: [
@@ -112,7 +121,7 @@ export const pikachuPokemon: PokeApiPokemon = {
     statEntry("defense", 40, 3),
     statEntry("special-attack", 50, 4),
     statEntry("special-defense", 50, 5),
-    statEntry("speed", 90, 6),
+    statEntry("speed", 90, 6, 2),
   ],
   types: [
     {
@@ -318,9 +327,10 @@ export const staticAbility: PokeApiAbility = {
   name: "static",
 };
 
-function statEntry(name: string, baseStat: number, id: number) {
+function statEntry(name: string, baseStat: number, id: number, effort = 0) {
   return {
     base_stat: baseStat,
+    effort,
     stat: {
       name,
       url: `https://pokeapi.co/api/v2/stat/${id}/`,

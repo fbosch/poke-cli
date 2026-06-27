@@ -25,12 +25,15 @@ import {
   PokemonSpriteShinyMarker,
 } from "./PokemonSpritePanel";
 
-const detailInfoPanelWidth = 50;
-const detailSpritePanelHeight = 23;
-const detailSpritePanelWidth = 45;
-const detailFactsPanelHeight = 13;
-const detailFlavorPanelHeight =
+export const detailInfoPanelWidth = 50;
+export const detailSpritePanelHeight = 23;
+export const detailSpritePanelWidth = 45;
+export const detailFactsPanelHeight = 14;
+export const detailFlavorPanelHeight =
   detailSpritePanelHeight - detailFactsPanelHeight;
+export const detailStatsPanelWidth = 45;
+export const detailDamagePanelWidth = 50;
+export const detailLowerPanelMinHeight = 10;
 
 export type LoadedDetailViewProps = {
   abilityViewerOpen: boolean;
@@ -140,12 +143,16 @@ export function LoadedDetailView({
               <FactRow label="Generation" value={detail.generation} />
               <FactRow label="Growth" value={detail.growthRate} />
               <FactRow label="Capture" value={detail.captureRate.toString()} />
+              <FactRow label="EV Yield" value={formatEvYield(detail.evYield)} />
               <AbilityRows abilities={detail.abilities} />
             </DetailPanel>
           </box>
         </box>
         <box style={{ flexDirection: "row", gap: 1 }}>
-          <DetailPanel minHeight={10} width={45}>
+          <DetailPanel
+            minHeight={detailLowerPanelMinHeight}
+            width={detailStatsPanelWidth}
+          >
             <text attributes={textStyles.active}>Stats</text>
             <text> </text>
             {detail.stats.map((stat) => (
@@ -158,8 +165,8 @@ export function LoadedDetailView({
           </DetailPanel>
           <DetailPanel
             key={`damage-${detail.dexNumber}-${detail.form.spriteFormKey}`}
-            minHeight={10}
-            width={50}
+            minHeight={detailLowerPanelMinHeight}
+            width={detailDamagePanelWidth}
           >
             <DamageTakenPanel damageTaken={detail.damageTaken} />
           </DetailPanel>
@@ -417,6 +424,14 @@ function GenderRatio({ ratio }: { ratio: PokemonDetail["genderRatio"] }) {
 
 function formatPercent(value: number): string {
   return `${Number.isInteger(value) ? value.toString() : value.toFixed(1)}%`;
+}
+
+function formatEvYield(evYield: PokemonDetail["evYield"]): string {
+  if (evYield.length === 0) {
+    return "None";
+  }
+
+  return evYield.map((entry) => `${entry.name} ${entry.effort}`).join(" / ");
 }
 
 function FactRow({ label, value }: { label: string; value: ReactNode }) {
