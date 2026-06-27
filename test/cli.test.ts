@@ -546,7 +546,7 @@ test("Detail evolution selection loads the selected species", () => {
 });
 
 test("Detail form selector opens, moves, and closes with Escape", () => {
-  const state = loadedPikachuDetailState();
+  const state = loadedPikachuMultiFormDetailState();
   const opened = applyAppKey(state, { name: "f" });
   const moved = applyAppKey(opened, { name: "j" });
   const closed = applyAppKey(moved, { name: "escape" });
@@ -580,7 +580,7 @@ test("Detail form selector does not open without alternate forms", () => {
 });
 
 test("Detail form selector loads the selected form", () => {
-  const state = loadedPikachuDetailState();
+  const state = loadedPikachuMultiFormDetailState();
   const opened = applyAppKey(state, { name: "f" });
   const moved = applyAppKey(opened, { name: "down" });
   const selected = applyAppKey(moved, { name: "enter" });
@@ -593,6 +593,23 @@ test("Detail form selector loads the selected form", () => {
       spriteFormKey: "rock-star",
     },
     species: { slug: "pikachu" },
+    status: "loading",
+  });
+});
+
+test("Detail form key toggles when there is one alternate form", () => {
+  const state = loadedAlolanVulpixDetailState();
+  const toggled = applyAppKey(state, { name: "f" });
+
+  expect(toggled).toMatchObject({
+    screen: "detail",
+    detailOverlay: undefined,
+    form: {
+      isDefault: true,
+      pokemonName: "vulpix",
+      spriteFormKey: "$",
+    },
+    species: { slug: "vulpix" },
     status: "loading",
   });
 });
@@ -615,23 +632,7 @@ test("Detail next navigation carries Alolan form to Ninetales", () => {
     species: { slug: "ninetales" },
     status: "loading",
   });
-  expect(loaded).toMatchObject({
-    screen: "detail",
-    detail: {
-      detail: {
-        form: {
-          pokemonName: "ninetales-alola",
-          spriteFormKey: "alola",
-        },
-        name: "Ninetales Alola",
-      },
-    },
-    form: {
-      pokemonName: "ninetales-alola",
-      spriteFormKey: "alola",
-    },
-    status: "ready",
-  });
+  expectAlolanNinetalesLoaded(loaded);
 });
 
 test("Detail evolution selection carries Alolan form to Ninetales", () => {
@@ -650,19 +651,40 @@ test("Detail evolution selection carries Alolan form to Ninetales", () => {
     species: { slug: "ninetales" },
     status: "loading",
   });
+  expectAlolanNinetalesLoaded(loaded);
+});
+
+test("Detail evolution selection accepts default when carried form is unavailable", () => {
+  const state = loadedAlolanVulpixDetailState();
+  const ninetales =
+    findExactSpecies("ninetales") ?? throwMissingSpecies("ninetales");
+  const next = loadDetailSpecies(state, ninetales);
+  const loaded = detailLoadSucceeded(next, ninetales, defaultNinetalesDetail);
+
+  expect(next).toMatchObject({
+    screen: "detail",
+    form: {
+      pokemonName: "vulpix-alola",
+      spriteFormKey: "alola",
+    },
+    species: { slug: "ninetales" },
+    status: "loading",
+  });
   expect(loaded).toMatchObject({
     screen: "detail",
     detail: {
       detail: {
         form: {
-          pokemonName: "ninetales-alola",
-          spriteFormKey: "alola",
+          isDefault: true,
+          pokemonName: "ninetales",
+          spriteFormKey: "$",
         },
       },
     },
     form: {
-      pokemonName: "ninetales-alola",
-      spriteFormKey: "alola",
+      isDefault: true,
+      pokemonName: "ninetales",
+      spriteFormKey: "$",
     },
     status: "ready",
   });
@@ -745,7 +767,44 @@ function loadedPikachuDetailState(): DetailState {
   );
 }
 
+function loadedPikachuMultiFormDetailState(): DetailState {
+  return detailLoadSucceeded(
+    createInitialAppState("pikachu") as DetailState,
+    findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu"),
+    {
+      ...pikachuDetail,
+      forms: [...pikachuDetail.forms, pikachuLibreForm],
+    },
+  );
+}
+
+function expectAlolanNinetalesLoaded(state: DetailState) {
+  expect(state).toMatchObject({
+    screen: "detail",
+    detail: {
+      detail: {
+        form: {
+          pokemonName: "ninetales-alola",
+          spriteFormKey: "alola",
+        },
+        name: "Ninetales Alola",
+      },
+    },
+    form: {
+      pokemonName: "ninetales-alola",
+      spriteFormKey: "alola",
+    },
+    status: "ready",
+  });
+}
+
 const vulpixDefaultForm = pokemonForm("Vulpix (Default)", true, "vulpix", "$");
+const pikachuLibreForm = pokemonForm(
+  "Pikachu Libre",
+  false,
+  "pikachu-libre",
+  "libre",
+);
 const alolanVulpixForm = pokemonForm(
   "Vulpix Alola",
   false,
@@ -786,6 +845,11 @@ const alolanNinetalesDetail = pokemonDetailWithForms(
   "Ninetales Alola",
   [ninetalesDefaultForm, alolanNinetalesForm],
   alolanNinetalesForm,
+);
+const defaultNinetalesDetail = pokemonDetailWithForms(
+  "Ninetales",
+  [ninetalesDefaultForm],
+  ninetalesDefaultForm,
 );
 
 function loadedAlolanVulpixDetailState(): DetailState {

@@ -49,6 +49,20 @@ const eeveeIndexEntry: SpeciesIndexEntry = {
   name: "Eevee",
   slug: "eevee",
 };
+const ninetalesIndexEntry: SpeciesIndexEntry = {
+  aliases: ["038", "38"],
+  dexNumber: 38,
+  dexNumbers: ["38", "038"],
+  name: "Ninetales",
+  slug: "ninetales",
+};
+const carriedVulpixAlolaForm = {
+  displayName: "Vulpix Alola",
+  isDefault: false,
+  pokemonName: "vulpix-alola",
+  pokemonUrl: "https://pokeapi.co/api/v2/pokemon/vulpix-alola/",
+  spriteFormKey: "alola",
+};
 
 test("builds Default Representative PokemonDetail from validated PokeAPI resources", () => {
   const forms = buildPokemonForms(pikachuIndexEntry, pikachuSpecies);
@@ -212,67 +226,45 @@ test("excludes unsupported Gmax varieties from selectable Pokemon Forms", () => 
 });
 
 test("loads carried regional form by sprite form key", async () => {
-  const vulpixAlolaForm = {
-    displayName: "Vulpix Alola",
-    isDefault: false,
-    pokemonName: "vulpix-alola",
-    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/vulpix-alola/",
-    spriteFormKey: "alola",
-  };
-  const ninetalesIndexEntry: SpeciesIndexEntry = {
-    aliases: ["038", "38"],
-    dexNumber: 38,
-    dexNumbers: ["38", "038"],
-    name: "Ninetales",
-    slug: "ninetales",
-  };
-
-  server.use(
-    http.get("https://pokeapi.co/api/v2/pokemon-species/38/", () => {
-      return HttpResponse.json({
-        ...pikachuSpecies,
-        id: 38,
-        name: "ninetales",
-        names: [{ language: { name: "en", url: "" }, name: "Ninetales" }],
-        varieties: [
-          {
-            is_default: true,
-            pokemon: {
-              name: "ninetales",
-              url: "https://pokeapi.co/api/v2/pokemon/38/",
-            },
-          },
-          {
-            is_default: false,
-            pokemon: {
-              name: "ninetales-alola",
-              url: "https://pokeapi.co/api/v2/pokemon/ninetales-alola/",
-            },
-          },
-        ],
-      });
-    }),
-    http.get("https://pokeapi.co/api/v2/pokemon/ninetales-alola/", () => {
-      return HttpResponse.json({ ...pikachuPokemon, name: "ninetales-alola" });
-    }),
-    http.get("https://pokeapi.co/api/v2/evolution-chain/10/", () => {
-      return HttpResponse.json(pikachuEvolutionChain);
-    }),
-  );
-
-  const detail = (await executeQuery(
-    pokemonDetailQueryOptions(
-      ninetalesIndexEntry,
-      createResourceQueryClient(),
-      vulpixAlolaForm,
-    ),
-  )) as PokemonDetail;
+  setupNinetalesDetailResources({
+    includeAlola: true,
+    includeFormDescription: true,
+  });
+  const detail = await loadNinetalesWithCarriedAlolaForm();
 
   expect(detail.form).toMatchObject({
     pokemonName: "ninetales-alola",
     spriteFormKey: "alola",
   });
   expect(detail.name).toBe("Ninetales Alola");
+  expect(detail.flavorText).toBe("This form lives on snowy mountains.");
+});
+
+test("falls back to species flavor text when selected form has no description", async () => {
+  setupNinetalesDetailResources({
+    includeAlola: true,
+    includeFormDescription: false,
+  });
+  const detail = await loadNinetalesWithCarriedAlolaForm();
+
+  expect(detail.form).toMatchObject({
+    pokemonName: "ninetales-alola",
+    spriteFormKey: "alola",
+  });
+  expect(detail.flavorTexts.length).toBeGreaterThan(0);
+  expect(detail.flavorText).toContain("electricity can build");
+});
+
+test("falls back to default form when carried evolution form is unavailable", async () => {
+  setupNinetalesDetailResources({ includeAlola: false });
+  const detail = await loadNinetalesWithCarriedAlolaForm();
+
+  expect(detail.form).toMatchObject({
+    isDefault: true,
+    pokemonName: "ninetales",
+    spriteFormKey: "$",
+  });
+  expect(detail.name).toBe("Ninetales");
 });
 
 test("builds PokemonAbilityDetail from validated PokeAPI Ability resources", () => {
@@ -439,4 +431,74 @@ function createResourceQueryClient() {
       return executeQuery<TData>(resourceOptions);
     },
   };
+}
+
+function setupNinetalesDetailResources({
+  includeAlola,
+  includeFormDescription = includeAlola,
+}: {
+  includeAlola: boolean;
+  includeFormDescription?: boolean;
+}) {
+  server.use(
+    http.get("https://pokeapi.co/api/v2/pokemon-species/38/", () => {
+      return HttpResponse.json({
+        ...pikachuSpecies,
+        form_descriptions: includeFormDescription
+          ? [
+              {
+                description: "This form lives on snowy mountains.",
+                language: { name: "en", url: "" },
+              },
+            ]
+          : [],
+        id: 38,
+        name: "ninetales",
+        names: [{ language: { name: "en", url: "" }, name: "Ninetales" }],
+        varieties: ninetalesVarieties(includeAlola),
+      });
+    }),
+    http.get("https://pokeapi.co/api/v2/pokemon/38/", () => {
+      return HttpResponse.json({ ...pikachuPokemon, name: "ninetales" });
+    }),
+    http.get("https://pokeapi.co/api/v2/pokemon/ninetales-alola/", () => {
+      return HttpResponse.json({ ...pikachuPokemon, name: "ninetales-alola" });
+    }),
+    http.get("https://pokeapi.co/api/v2/evolution-chain/10/", () => {
+      return HttpResponse.json(pikachuEvolutionChain);
+    }),
+  );
+}
+
+function ninetalesVarieties(includeAlola: boolean) {
+  return [
+    {
+      is_default: true,
+      pokemon: {
+        name: "ninetales",
+        url: "https://pokeapi.co/api/v2/pokemon/38/",
+      },
+    },
+    ...(includeAlola
+      ? [
+          {
+            is_default: false,
+            pokemon: {
+              name: "ninetales-alola",
+              url: "https://pokeapi.co/api/v2/pokemon/ninetales-alola/",
+            },
+          },
+        ]
+      : []),
+  ];
+}
+
+async function loadNinetalesWithCarriedAlolaForm(): Promise<PokemonDetail> {
+  return (await executeQuery(
+    pokemonDetailQueryOptions(
+      ninetalesIndexEntry,
+      createResourceQueryClient(),
+      carriedVulpixAlolaForm,
+    ),
+  )) as PokemonDetail;
 }

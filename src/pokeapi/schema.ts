@@ -25,6 +25,7 @@ export type PokeApiPokemonSpecies = Pick<
   GeneratedSpecies,
   | "evolution_chain"
   | "egg_groups"
+  | "form_descriptions"
   | "flavor_text_entries"
   | "genera"
   | "id"
@@ -102,6 +103,12 @@ export const pokemonResourceSchema = z.object({
 export const pokemonSpeciesResourceSchema = z.object({
   egg_groups: z.array(namedResourceSchema),
   evolution_chain: z.object({ url: z.string() }),
+  form_descriptions: z.array(
+    z.object({
+      description: z.string().optional(),
+      language: namedResourceSchema,
+    }),
+  ),
   flavor_text_entries: z.array(
     z.object({
       flavor_text: z.string(),

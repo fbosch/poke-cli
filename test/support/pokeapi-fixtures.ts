@@ -25,6 +25,7 @@ export const pikachuSpecies: PokeApiPokemonSpecies = {
   evolution_chain: {
     url: "https://pokeapi.co/api/v2/evolution-chain/10/",
   },
+  form_descriptions: [],
   flavor_text_entries: [
     {
       flavor_text:

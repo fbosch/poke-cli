@@ -144,7 +144,7 @@ export function LoadedDetailView({
             ))}
           </DetailPanel>
           <DetailPanel
-            key={`damage-${detail.dexNumber}`}
+            key={`damage-${detail.dexNumber}-${detail.form.spriteFormKey}`}
             minHeight={10}
             width={50}
           >

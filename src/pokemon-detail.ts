@@ -231,7 +231,7 @@ export function buildPokemonDetail(
   const types = pokemonResource.types
     .toSorted((left, right) => left.slot - right.slot)
     .map((entry) => formatResourceName(entry.type.name));
-  const flavorTexts = buildFlavorTexts(speciesResource);
+  const flavorTexts = buildFlavorTexts(speciesResource, form);
 
   return {
     abilities: pokemonResource.abilities
@@ -455,17 +455,14 @@ function getSelectedPokemonForm(
   forms: readonly PokemonForm[],
   selectedForm?: PokemonForm,
 ): PokemonForm {
+  const defaultForm = forms.find((candidate) => candidate.isDefault);
   const form =
     selectedForm === undefined
-      ? forms.find((candidate) => candidate.isDefault)
-      : findSelectedPokemonForm(forms, selectedForm);
+      ? defaultForm
+      : (findSelectedPokemonForm(forms, selectedForm) ?? defaultForm);
 
   if (form === undefined) {
-    throw new Error(
-      selectedForm === undefined
-        ? "PokeAPI species has no default variety"
-        : `PokeAPI species is missing form ${selectedForm.pokemonName}`,
-    );
+    throw new Error("PokeAPI species has no default variety");
   }
 
   return form;
@@ -497,7 +494,15 @@ function getEnglishSpeciesName(
 
 function buildFlavorTexts(
   speciesResource: PokeApiPokemonSpecies,
+  form: PokemonForm,
 ): PokemonFlavorText[] {
+  if (form.isDefault === false) {
+    const formDescriptions = buildFormDescriptionTexts(speciesResource);
+    if (formDescriptions.length > 0) {
+      return formDescriptions;
+    }
+  }
+
   const entries = speciesResource.flavor_text_entries
     .filter((entry) => entry.language.name === "en")
     .toSorted((left, right) =>
@@ -508,6 +513,20 @@ function buildFlavorTexts(
     source: formatResourceName(entry.version.name),
     text: normalizeFlavorText(entry.flavor_text),
   }));
+}
+
+function buildFormDescriptionTexts(
+  speciesResource: PokeApiPokemonSpecies,
+): PokemonFlavorText[] {
+  return speciesResource.form_descriptions
+    .filter(
+      (entry) =>
+        entry.language.name === "en" && entry.description !== undefined,
+    )
+    .map((entry) => ({
+      source: "Form",
+      text: normalizeFlavorText(entry.description ?? ""),
+    }));
 }
 
 function normalizeFlavorText(value: string): string {

@@ -267,6 +267,10 @@ function applyDetailActionKey(state: DetailState, key: AppKey): AppState {
     return toggleDetailShiny(state);
   }
 
+  if (canToggleSingleAlternateForm(state, key)) {
+    return toggleSingleAlternateForm(state);
+  }
+
   const navigationDelta = getDetailNavigationDelta(key);
   if (navigationDelta !== undefined) {
     return loadAdjacentDetailSpecies(state, navigationDelta);
@@ -315,7 +319,18 @@ function canOpenFormSelector(state: DetailState, key: AppKey): boolean {
   return (
     key.name === "f" &&
     state.detail !== undefined &&
-    hasAlternatePokemonForms(state.detail.detail)
+    getAlternatePokemonForms(state.detail.detail).length > 1
+  );
+}
+
+function canToggleSingleAlternateForm(
+  state: DetailState,
+  key: AppKey,
+): boolean {
+  return (
+    key.name === "f" &&
+    state.detail !== undefined &&
+    getAlternatePokemonForms(state.detail.detail).length === 1
   );
 }
 
@@ -431,6 +446,22 @@ function loadSelectedDetailForm(state: DetailState): DetailState {
   }
 
   return loadDetailForm(state, form);
+}
+
+function toggleSingleAlternateForm(state: DetailState): DetailState {
+  const detail = state.detail?.detail;
+  if (detail === undefined) {
+    return state;
+  }
+
+  const alternateForm = getAlternatePokemonForms(detail)[0];
+  const defaultForm = detail.forms.find((form) => form.isDefault);
+  const targetForm = detail.form.isDefault ? alternateForm : defaultForm;
+  if (targetForm === undefined) {
+    return state;
+  }
+
+  return loadDetailForm(state, targetForm);
 }
 
 function toggleDetailShiny(state: DetailState): DetailState {
@@ -570,7 +601,7 @@ function detailLoadSucceededState(
 ): DetailState {
   if (
     state.species.slug !== species.slug ||
-    !pokemonFormsMatch(state.form, detail.form)
+    !pokemonFormsMatch(state.form, detail.form, { allowDefaultFallback: true })
   ) {
     return state;
   }
@@ -597,7 +628,7 @@ function detailLoadFailedState(
 ): DetailState {
   if (
     state.species.slug !== species.slug ||
-    !pokemonFormsMatch(state.form, form)
+    !pokemonFormsMatch(state.form, form, { allowDefaultFallback: false })
   ) {
     return state;
   }
@@ -660,14 +691,30 @@ function evolutionChainIncludesSpecies(
 function pokemonFormsMatch(
   requested: PokemonForm | undefined,
   loaded: PokemonForm | undefined,
+  { allowDefaultFallback }: { allowDefaultFallback: boolean },
 ): boolean {
   if (pokemonFormTargetKey(requested) === pokemonFormTargetKey(loaded)) {
     return true;
   }
 
+  if (requested === undefined || loaded === undefined) {
+    return false;
+  }
+
+  if (pokemonFormsShareAlternateKey(requested, loaded)) {
+    return true;
+  }
+
   return (
-    requested !== undefined &&
-    loaded !== undefined &&
+    allowDefaultFallback && requested.isDefault === false && loaded.isDefault
+  );
+}
+
+function pokemonFormsShareAlternateKey(
+  requested: PokemonForm,
+  loaded: PokemonForm,
+): boolean {
+  return (
     requested.isDefault === false &&
     loaded.isDefault === false &&
     requested.spriteFormKey === loaded.spriteFormKey
@@ -786,8 +833,8 @@ function getCurrentPokemonFormIndex(state: DetailState): number {
   return Math.max(0, index);
 }
 
-function hasAlternatePokemonForms(detail: PokemonDetail): boolean {
-  return detail.forms.length > 1;
+function getAlternatePokemonForms(detail: PokemonDetail): PokemonForm[] {
+  return detail.forms.filter((form) => form.isDefault === false);
 }
 
 function getDetailErrorMessage(error: unknown): string {
