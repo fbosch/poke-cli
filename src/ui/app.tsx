@@ -15,6 +15,7 @@ import {
   type DetailNavigationDelta,
   type DetailState,
 } from "../app-state";
+import { appendDebugErrorLog } from "../error-log";
 import type { PokemonDetail, PokemonForm } from "../pokemon-detail";
 import {
   pokemonAbilityDetailsQueryOptions,
@@ -100,6 +101,14 @@ export function App({
       <>
         <DetailView
           onLoadFailed={(species, form, error) => {
+            if (debug) {
+              void appendDebugErrorLog(error, {
+                event: "detail.loadFailed",
+                form: form?.pokemonName,
+                species: species.slug,
+              });
+            }
+
             setState((current) =>
               current.screen === "detail"
                 ? detailLoadFailed(current, species, error, form)
@@ -145,6 +154,15 @@ export function App({
                 ? loadDetailSpecies(current, species)
                 : current,
             );
+          }}
+          onRenderError={(error) => {
+            if (debug) {
+              void appendDebugErrorLog(error, {
+                event: "detail.renderFailed",
+                form: state.form?.pokemonName,
+                species: state.species.slug,
+              });
+            }
           }}
           state={state}
           onCloseOverlay={() => {
@@ -196,6 +214,7 @@ type DetailViewProps = {
     detail: PokemonDetail,
   ) => void;
   onNavigate: (delta: DetailNavigationDelta) => void;
+  onRenderError: (error: Error) => void;
   onSelectSpecies: (name: string) => void;
   state: DetailState;
   terminalImagesEnabled: boolean;
@@ -231,6 +250,7 @@ function DetailView({
   onLoadFailed,
   onLoadSucceeded,
   onNavigate,
+  onRenderError,
   onSelectSpecies,
   state,
   terminalImagesEnabled,
@@ -266,7 +286,10 @@ function DetailView({
   });
 
   return (
-    <DetailErrorBoundary resetKey={detailErrorBoundaryResetKey(state)}>
+    <DetailErrorBoundary
+      onError={onRenderError}
+      resetKey={detailErrorBoundaryResetKey(state)}
+    >
       <DetailViewContent
         onCloseOverlay={onCloseOverlay}
         onNavigate={onNavigate}

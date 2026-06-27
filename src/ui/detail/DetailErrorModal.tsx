@@ -9,6 +9,7 @@ type DetailErrorModalProps = {
 
 type DetailErrorBoundaryProps = {
   children: ReactNode;
+  onError?: (error: Error) => void;
   resetKey: string;
 };
 
@@ -63,6 +64,10 @@ export class DetailErrorBoundary extends Component<
     }
 
     return { error: undefined, resetKey: props.resetKey };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onError?.(error);
   }
 
   render() {
