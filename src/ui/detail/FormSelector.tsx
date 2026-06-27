@@ -2,6 +2,14 @@ import type { PokemonForm } from "../../pokemon-detail";
 import { KeyHints, Modal, keyHintsWidth } from "../components";
 import { colors } from "../design-tokens";
 
+const formSelectorHeight = 12;
+const formSelectorWidth = 44;
+const formSelectorListWidth = formSelectorWidth - 4;
+const formSelectorHints = [
+  { key: "j/k", action: "move" },
+  { key: "enter", action: "select" },
+] as const;
+
 export function FormSelector({
   currentForm,
   forms,
@@ -21,32 +29,22 @@ export function FormSelector({
 
   return (
     <Modal
-      right={
-        <KeyHints
-          hints={[
-            { key: "j/k", action: "move" },
-            { key: "enter", action: "select" },
-            { key: "esc", action: "close" },
-          ]}
-        />
-      }
-      rightWidth={keyHintsWidth([
-        { key: "j/k", action: "move" },
-        { key: "enter", action: "select" },
-        { key: "esc", action: "close" },
-      ])}
+      right={<KeyHints hints={formSelectorHints} />}
+      rightWidth={keyHintsWidth(formSelectorHints)}
       title="Forms"
+      width={formSelectorWidth}
       {...(onClose === undefined ? {} : { onClose })}
     >
       <select
-        height={forms.length}
+        height={Math.min(forms.length, formSelectorHeight)}
         options={options}
         selectedBackgroundColor={colors.selected}
         selectedIndex={selectedIndex}
+        showScrollIndicator={forms.length > formSelectorHeight}
         selectedTextColor={colors.selectedText}
         showDescription={false}
         textColor={colors.keyHint}
-        width={36}
+        width={formSelectorListWidth}
       />
     </Modal>
   );

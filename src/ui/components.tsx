@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { colors, textStyles } from "./design-tokens";
 
 export const detailCardWidth = 100;
@@ -159,7 +159,6 @@ export function DetailCardTitle({
 export function Modal({
   children,
   minWidth,
-  onClose,
   right,
   rightWidth,
   title,
@@ -212,15 +211,11 @@ export function Modal({
           }}
         >
           <ModalTitle
-            closeWidth={onClose === undefined ? 0 : 6}
             right={right}
             rightWidth={rightWidth}
             title={title}
             width={resolvedWidth - 4}
           />
-          {onClose === undefined ? null : (
-            <ModalCloseButton left={resolvedWidth - 8} onClose={onClose} />
-          )}
           <text> </text>
           {children}
         </box>
@@ -230,13 +225,11 @@ export function Modal({
 }
 
 function ModalTitle({
-  closeWidth,
   right,
   rightWidth,
   title,
   width,
 }: {
-  closeWidth: number;
   right: ReactNode;
   rightWidth: number | undefined;
   title: string;
@@ -244,10 +237,7 @@ function ModalTitle({
 }) {
   const resolvedRightWidth =
     rightWidth ?? (typeof right === "string" ? right.length : 0);
-  const spacerWidth = Math.max(
-    1,
-    width - title.length - resolvedRightWidth - closeWidth,
-  );
+  const spacerWidth = Math.max(1, width - title.length - resolvedRightWidth);
 
   return (
     <box style={{ flexDirection: "row" }}>
@@ -255,30 +245,6 @@ function ModalTitle({
       <text>{" ".repeat(spacerWidth)}</text>
       <text>{right}</text>
     </box>
-  );
-}
-
-function ModalCloseButton({
-  left,
-  onClose,
-}: {
-  left: number;
-  onClose: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <text
-      attributes={textStyles.active}
-      bg={hovered ? colors.selected : colors.panelSecondary}
-      fg={hovered ? colors.selectedText : colors.keyHint}
-      onMouseDown={onClose}
-      onMouseOut={() => setHovered(false)}
-      onMouseOver={() => setHovered(true)}
-      style={{ left, position: "absolute", top: 0 }}
-    >
-      [ X ]
-    </text>
   );
 }
 
