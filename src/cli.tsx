@@ -71,6 +71,7 @@ export async function main(args = Bun.argv.slice(2)): Promise<void> {
 
   root.render(
     <Root
+      debug={debug}
       imageMode={imageMode}
       initialQuery={initialQuery}
       onExit={() => {

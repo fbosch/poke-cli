@@ -25,6 +25,7 @@ import {
   pokespriteCachedAssetQueryOptions,
   pokespriteRenderedSpriteQueryOptions,
 } from "../pokesprite";
+import { QueryDebugPanel } from "./QueryDebugPanel";
 import {
   findExactSpecies,
   getSpeciesByDexDelta,
@@ -54,12 +55,14 @@ import { SearchView } from "./search/SearchView";
 import { useTerminalImageSupport } from "./useTerminalImageSupport";
 
 type AppProps = {
+  debug?: boolean;
   imageMode?: CliImageMode;
   initialQuery?: string;
   onExit: () => void;
 };
 
 export function App({
+  debug = false,
   imageMode = "builtin",
   initialQuery = "",
   onExit,
@@ -85,64 +88,72 @@ export function App({
 
   if (state.screen === "detail") {
     return (
-      <DetailView
-        onLoadFailed={(species, form, error) => {
-          setState((current) =>
-            current.screen === "detail"
-              ? detailLoadFailed(current, species, error, form)
-              : current,
-          );
-        }}
-        onAbilityDetailsLoadFailed={() => {
-          setState((current) =>
-            current.screen === "detail"
-              ? detailAbilitiesLoadFailed(current)
-              : current,
-          );
-        }}
-        onAbilityDetailsLoaded={() => {
-          setState((current) =>
-            current.screen === "detail"
-              ? detailAbilitiesLoaded(current)
-              : current,
-          );
-        }}
-        onLoadSucceeded={(species, detail) => {
-          setState((current) =>
-            current.screen === "detail"
-              ? detailLoadSucceeded(current, species, detail)
-              : current,
-          );
-        }}
-        onNavigate={(delta) => {
-          setState((current) =>
-            current.screen === "detail"
-              ? loadAdjacentDetailSpecies(current, delta)
-              : current,
-          );
-        }}
-        onSelectSpecies={(name) => {
-          const species = findExactSpecies(name);
-          if (species === undefined) {
-            return;
-          }
+      <>
+        <DetailView
+          onLoadFailed={(species, form, error) => {
+            setState((current) =>
+              current.screen === "detail"
+                ? detailLoadFailed(current, species, error, form)
+                : current,
+            );
+          }}
+          onAbilityDetailsLoadFailed={() => {
+            setState((current) =>
+              current.screen === "detail"
+                ? detailAbilitiesLoadFailed(current)
+                : current,
+            );
+          }}
+          onAbilityDetailsLoaded={() => {
+            setState((current) =>
+              current.screen === "detail"
+                ? detailAbilitiesLoaded(current)
+                : current,
+            );
+          }}
+          onLoadSucceeded={(species, detail) => {
+            setState((current) =>
+              current.screen === "detail"
+                ? detailLoadSucceeded(current, species, detail)
+                : current,
+            );
+          }}
+          onNavigate={(delta) => {
+            setState((current) =>
+              current.screen === "detail"
+                ? loadAdjacentDetailSpecies(current, delta)
+                : current,
+            );
+          }}
+          onSelectSpecies={(name) => {
+            const species = findExactSpecies(name);
+            if (species === undefined) {
+              return;
+            }
 
-          setState((current) =>
-            current.screen === "detail"
-              ? loadDetailSpecies(current, species)
-              : current,
-          );
-        }}
-        state={state}
-        onCloseOverlay={() => {
-          setState((current) => applyAppKey(current, { name: "escape" }));
-        }}
-        terminalImagesEnabled={imageMode === "builtin"}
-      />
+            setState((current) =>
+              current.screen === "detail"
+                ? loadDetailSpecies(current, species)
+                : current,
+            );
+          }}
+          state={state}
+          onCloseOverlay={() => {
+            setState((current) => applyAppKey(current, { name: "escape" }));
+          }}
+          terminalImagesEnabled={imageMode === "builtin"}
+        />
+        {debug ? <QueryDebugPanel /> : null}
+      </>
     );
   }
 
-  return <SearchView query={state.query} selectedIndex={state.selectedIndex} />;
+  return (
+    <>
+      <SearchView query={state.query} selectedIndex={state.selectedIndex} />
+      {debug ? <QueryDebugPanel /> : null}
+    </>
+  );
 }
 
 async function openPokemonDbPokedexEntryInBrowser(species: SpeciesIndexEntry) {

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { createElement } from "react";
 import { isValidElement } from "react";
+import { QueryDebugPanelView } from "../src/ui/QueryDebugPanel";
 import { DamageTakenPanel } from "../src/ui/detail/DamageTakenPanel";
 import {
   EvolutionViewer,
@@ -80,6 +81,25 @@ test("renders recoverable sprite-specific errors", () => {
 
 test("renders shiny Sprite marker", () => {
   const element = PokemonSpriteShinyMarker();
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+});
+
+test("renders query debug panel entries", () => {
+  const element = QueryDebugPanelView({
+    entries: [
+      {
+        error: "",
+        fetchStatus: "idle",
+        id: "pokemon-detail-25",
+        key: '["pokemon-detail",25]',
+        observers: 1,
+        status: "success",
+        updated: "0s ago",
+      },
+    ],
+  });
 
   expect(element).toBeDefined();
   expect(isValidElement(element)).toBe(true);

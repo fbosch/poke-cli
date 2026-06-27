@@ -13,12 +13,14 @@ const persistQueryCache = Bun.env.NODE_ENV !== "development";
 const queryClient = createAppQueryClient();
 
 type RootProps = {
+  debug?: boolean;
   imageMode?: CliImageMode;
   initialQuery?: string;
   onExit: () => void;
 };
 
 export function Root({
+  debug = false,
   imageMode = "builtin",
   initialQuery = "",
   onExit,
@@ -27,6 +29,7 @@ export function Root({
     return (
       <QueryClientProvider client={queryClient}>
         <App
+          debug={debug}
           imageMode={imageMode}
           initialQuery={initialQuery}
           onExit={onExit}
@@ -46,7 +49,12 @@ export function Root({
         persister,
       }}
     >
-      <App imageMode={imageMode} initialQuery={initialQuery} onExit={onExit} />
+      <App
+        debug={debug}
+        imageMode={imageMode}
+        initialQuery={initialQuery}
+        onExit={onExit}
+      />
     </PersistQueryClientProvider>
   );
 }
