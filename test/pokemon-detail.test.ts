@@ -259,6 +259,25 @@ test("prefers selected form version group flavor text", async () => {
   });
 });
 
+test("omits alternate form version group flavor text from default form", async () => {
+  setupNinetalesDetailResources({
+    includeAlola: true,
+    includeVersionGroupFlavor: true,
+  });
+  const detail = await loadDefaultNinetales();
+
+  expect(detail.form).toMatchObject({
+    isDefault: true,
+    pokemonName: "ninetales",
+    spriteFormKey: "$",
+  });
+  expect(detail.flavorText).toContain("electricity can build");
+  expect(detail.flavorTexts).not.toContainEqual({
+    source: "Moon",
+    text: "Alolan Ninetales protects snowy peaks.",
+  });
+});
+
 test("falls back to species flavor text when selected form has no description", async () => {
   setupNinetalesDetailResources({
     includeAlola: true,
@@ -322,6 +341,29 @@ test("loads Default Representative PokemonDetail through mocked PokeAPI queries"
     }),
     http.get("https://pokeapi.co/api/v2/pokemon/25/", () => {
       return HttpResponse.json(pikachuPokemon);
+    }),
+    http.get(
+      "https://pokeapi.co/api/v2/pokemon-form/pikachu-rock-star/",
+      () => {
+        return HttpResponse.json({
+          name: "pikachu-rock-star",
+          version_group: {
+            name: "omega-ruby-alpha-sapphire",
+            url: "https://pokeapi.co/api/v2/version-group/16/",
+          },
+        });
+      },
+    ),
+    http.get("https://pokeapi.co/api/v2/version-group/16/", () => {
+      return HttpResponse.json({
+        name: "omega-ruby-alpha-sapphire",
+        versions: [
+          {
+            name: "omega-ruby",
+            url: "https://pokeapi.co/api/v2/version/15/",
+          },
+        ],
+      });
     }),
     http.get("https://pokeapi.co/api/v2/evolution-chain/10/", () => {
       return HttpResponse.json(pikachuEvolutionChain);
@@ -579,5 +621,11 @@ async function loadNinetalesWithCarriedAlolaForm(): Promise<PokemonDetail> {
       createResourceQueryClient(),
       carriedVulpixAlolaForm,
     ),
+  )) as PokemonDetail;
+}
+
+async function loadDefaultNinetales(): Promise<PokemonDetail> {
+  return (await executeQuery(
+    pokemonDetailQueryOptions(ninetalesIndexEntry, createResourceQueryClient()),
   )) as PokemonDetail;
 }

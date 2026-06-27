@@ -151,6 +151,11 @@ export function pokemonDetailQueryOptions(
         selectedForm,
         queryClient,
       );
+      const excludedVersionGroups = await loadExcludedFlavorTextVersionGroups(
+        forms,
+        selectedForm,
+        queryClient,
+      );
 
       return buildPokemonDetail(
         species,
@@ -160,6 +165,7 @@ export function pokemonDetailQueryOptions(
         forms,
         selectedForm,
         formVersionGroup,
+        excludedVersionGroups,
       );
     },
     ...queryCachePolicies.pokemonDetail,
@@ -236,11 +242,17 @@ export function buildPokemonDetail(
   forms: readonly PokemonForm[],
   form: PokemonForm,
   formVersionGroup?: PokeApiVersionGroup,
+  excludedVersionGroups: readonly PokeApiVersionGroup[] = [],
 ): PokemonDetail {
   const types = pokemonResource.types
     .toSorted((left, right) => left.slot - right.slot)
     .map((entry) => formatResourceName(entry.type.name));
-  const flavorTexts = buildFlavorTexts(speciesResource, form, formVersionGroup);
+  const flavorTexts = buildFlavorTexts(
+    speciesResource,
+    form,
+    formVersionGroup,
+    excludedVersionGroups,
+  );
 
   return {
     abilities: pokemonResource.abilities
@@ -505,6 +517,7 @@ function buildFlavorTexts(
   speciesResource: PokeApiPokemonSpecies,
   form: PokemonForm,
   formVersionGroup?: PokeApiVersionGroup,
+  excludedVersionGroups: readonly PokeApiVersionGroup[] = [],
 ): PokemonFlavorText[] {
   const versionGroupTexts = buildVersionGroupFlavorTexts(
     speciesResource,
@@ -521,8 +534,17 @@ function buildFlavorTexts(
     }
   }
 
+  const excludedVersionNames = new Set(
+    excludedVersionGroups.flatMap((versionGroup) =>
+      versionGroup.versions.map((version) => version.name),
+    ),
+  );
   const entries = speciesResource.flavor_text_entries
-    .filter((entry) => entry.language.name === "en")
+    .filter(
+      (entry) =>
+        entry.language.name === "en" &&
+        excludedVersionNames.has(entry.version.name) === false,
+    )
     .toSorted((left, right) =>
       left.version.name.localeCompare(right.version.name),
     );
@@ -553,6 +575,24 @@ async function loadPokemonFormVersionGroup(
       parse: parseVersionGroupResource,
       url: formResource.version_group.url,
     }),
+  );
+}
+
+async function loadExcludedFlavorTextVersionGroups(
+  forms: readonly PokemonForm[],
+  selectedForm: PokemonForm,
+  queryClient: ResourceQueryClient,
+): Promise<PokeApiVersionGroup[]> {
+  if (selectedForm.isDefault === false) {
+    return [];
+  }
+
+  return await Promise.all(
+    forms
+      .filter((form) => form.isDefault === false)
+      .map((form) => loadPokemonFormVersionGroup(form, queryClient)),
+  ).then((versionGroups) =>
+    versionGroups.filter((versionGroup) => versionGroup !== undefined),
   );
 }
 
