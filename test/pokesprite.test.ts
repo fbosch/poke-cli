@@ -424,7 +424,7 @@ test("resolves Froslass Mega to the correctly spelled pokemon-sprites icon", () 
   });
 });
 
-test("falls back to PokeAPI sprites for shiny unsupported Pokemon forms", () => {
+test("falls back to pokemon-sprites shiny icons for supported new Mega forms", () => {
   const metadata = parsePokeSpriteMetadata({
     ...pokespritePokemonMetadata,
     "036": {
@@ -453,13 +453,13 @@ test("falls back to PokeAPI sprites for shiny unsupported Pokemon forms", () => 
   ).toMatchObject({
     formKey: "mega",
     shiny: true,
-    slug: "10278",
-    source: "pokeapi-sprites",
-    url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/10278.png",
+    slug: "clefable-mega",
+    source: "pokemon-sprites",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/shiny/clefable-mega.png",
   });
   expect(pokespriteCachedAssetQueryKey(clefable, true, mega)).toEqual([
     "pokesprite-cached-asset",
-    "pokeapi-sprites",
+    "pokemon-sprites",
     36,
     "mega",
     true,

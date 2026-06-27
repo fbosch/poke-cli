@@ -201,7 +201,7 @@ export function pokespriteRenderedSpriteQueryKey(
 ): PokeSpriteRenderedSpriteQueryKey {
   return [
     "pokesprite-rendered-sprite",
-    pokeSpriteSourceForRequest(species, form, shiny),
+    pokeSpriteSourceForRequest(species, form),
     species.dexNumber,
     form?.spriteFormKey ?? "$",
     shiny,
@@ -255,7 +255,7 @@ export function pokespriteCachedAssetQueryKey(
 ): PokeSpriteCachedAssetQueryKey {
   return [
     "pokesprite-cached-asset",
-    pokeSpriteSourceForRequest(species, form, shiny),
+    pokeSpriteSourceForRequest(species, form),
     species.dexNumber,
     form?.spriteFormKey ?? "$",
     shiny,
@@ -314,7 +314,7 @@ export function pokespriteRenderedSpritePlaceholderData(
 ): RenderedSprite | undefined {
   if (
     previousQueryKey?.[0] !== "pokesprite-rendered-sprite" ||
-    previousQueryKey[1] !== pokeSpriteSourceForRequest(species, form, false) ||
+    previousQueryKey[1] !== pokeSpriteSourceForRequest(species, form) ||
     previousQueryKey[2] !== species.dexNumber ||
     previousQueryKey[3] !== (form?.spriteFormKey ?? "$") ||
     previousQueryKey[5] !== renderOptions.maxWidth ||
@@ -466,7 +466,6 @@ function resolvePokemonSpritesFormAsset(
   shiny: boolean,
 ): PokeSpriteAssetReference | undefined {
   if (
-    shiny ||
     form === undefined ||
     form.isDefault ||
     pokemonSpritesFormFallbackNames.has(form.pokemonName) === false
@@ -481,7 +480,7 @@ function resolvePokemonSpritesFormAsset(
     shiny,
     slug: form.pokemonName,
     source: "pokemon-sprites",
-    url: `${scarletVioletSpriteBaseUrl}pokemon/regular/${form.pokemonName}.png`,
+    url: `${scarletVioletSpriteBaseUrl}pokemon/${shiny ? "shiny" : "regular"}/${form.pokemonName}.png`,
   };
 }
 
@@ -609,7 +608,6 @@ function pokeSpriteSourceForSpecies(
 function pokeSpriteSourceForRequest(
   species: SpeciesIndexEntry,
   form: PokemonForm | undefined,
-  shiny: boolean,
 ): PokeSpriteSource {
   if (pokeSpriteSourceForSpecies(species) === "scarlet-violet") {
     return "scarlet-violet";
@@ -619,7 +617,7 @@ function pokeSpriteSourceForRequest(
     form !== undefined &&
     pokemonSpritesFormFallbackNames.has(form.pokemonName)
   ) {
-    return shiny ? "pokeapi-sprites" : "pokemon-sprites";
+    return "pokemon-sprites";
   }
 
   return "gen-8";
