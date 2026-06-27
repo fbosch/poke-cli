@@ -92,6 +92,29 @@ test("crops transparent PNG padding for terminal image rendering", () => {
   });
 });
 
+test("renders 4-bit indexed PNG sprites", () => {
+  const png = createIndexedPng({
+    bitDepth: 4,
+    height: 2,
+    palette: [
+      [0, 0, 0],
+      [255, 0, 0],
+      [0, 0, 255],
+    ],
+    pixels: [0, 1, 2, 0, 0, 2, 1, 0],
+    transparency: [0, 255, 255],
+    width: 4,
+  });
+
+  expect(cropPngSpriteToOpaqueBounds(png)).toMatchObject({
+    height: 2,
+    width: 2,
+    x: 1,
+    y: 0,
+  });
+  expect(renderPngSprite(png)).toMatchObject({ height: 1, width: 2 });
+});
+
 test("fits cropped terminal images to the same cell dimensions as sprites", () => {
   const image = { height: 56, width: 68 };
 
@@ -224,7 +247,7 @@ function createRgbaPng(
 
   const png = concatChunks([
     new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
-    pngChunk("IHDR", ihdrData(width, height)),
+    pngChunk("IHDR", ihdrData({ bitDepth: 8, colorType: 6, height, width })),
     pngChunk("IDAT", deflateSync(scanlines)),
     pngChunk("IEND", new Uint8Array()),
   ]);
@@ -234,13 +257,71 @@ function createRgbaPng(
   return result;
 }
 
-function ihdrData(width: number, height: number): Uint8Array {
+function createIndexedPng({
+  bitDepth,
+  height,
+  palette,
+  pixels,
+  transparency,
+  width,
+}: {
+  bitDepth: 1 | 2 | 4 | 8;
+  height: number;
+  palette: readonly [red: number, green: number, blue: number][];
+  pixels: readonly number[];
+  transparency?: readonly number[];
+  width: number;
+}): ArrayBuffer {
+  const stride = Math.ceil((width * bitDepth) / 8);
+  const scanlines = new Uint8Array(height * (1 + stride));
+
+  for (let y = 0; y < height; y += 1) {
+    const rowOffset = y * (1 + stride);
+    scanlines[rowOffset] = 0;
+
+    for (let x = 0; x < width; x += 1) {
+      const value = pixels[y * width + x] ?? 0;
+      const byteOffset = rowOffset + 1 + Math.floor((x * bitDepth) / 8);
+      const samplesPerByte = 8 / bitDepth;
+      const shift = (samplesPerByte - 1 - (x % samplesPerByte)) * bitDepth;
+      scanlines[byteOffset] = (scanlines[byteOffset] ?? 0) | (value << shift);
+    }
+  }
+
+  const chunks = [
+    new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk("IHDR", ihdrData({ bitDepth, colorType: 3, height, width })),
+    pngChunk("PLTE", new Uint8Array(palette.flat())),
+  ];
+  if (transparency !== undefined) {
+    chunks.push(pngChunk("tRNS", new Uint8Array(transparency)));
+  }
+  chunks.push(pngChunk("IDAT", deflateSync(scanlines)));
+  chunks.push(pngChunk("IEND", new Uint8Array()));
+
+  const png = concatChunks(chunks);
+  const result = new ArrayBuffer(png.byteLength);
+  new Uint8Array(result).set(png);
+  return result;
+}
+
+function ihdrData({
+  bitDepth,
+  colorType,
+  height,
+  width,
+}: {
+  bitDepth: number;
+  colorType: number;
+  height: number;
+  width: number;
+}): Uint8Array {
   const data = new Uint8Array(13);
   const view = new DataView(data.buffer);
   view.setUint32(0, width);
   view.setUint32(4, height);
-  data[8] = 8;
-  data[9] = 6;
+  data[8] = bitDepth;
+  data[9] = colorType;
   data[10] = 0;
   data[11] = 0;
   data[12] = 0;

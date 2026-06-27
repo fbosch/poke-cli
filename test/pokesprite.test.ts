@@ -347,7 +347,7 @@ test("maps Pokemon Forms to PokeSprite regular and shiny assets", () => {
   });
 });
 
-test("falls back to PokeAPI sprites for unsupported Pokemon forms", () => {
+test("falls back to pokemon-sprites icons for supported new Mega forms", () => {
   const metadata = parsePokeSpriteMetadata({
     ...pokespritePokemonMetadata,
     "036": {
@@ -376,10 +376,78 @@ test("falls back to PokeAPI sprites for unsupported Pokemon forms", () => {
   ).toMatchObject({
     formKey: "mega",
     shiny: false,
-    slug: "10278",
-    source: "pokeapi-sprites",
-    url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10278.png",
+    slug: "clefable-mega",
+    source: "pokemon-sprites",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/clefable-mega.png",
   });
+  expect(pokespriteCachedAssetQueryKey(clefable, false, mega)).toEqual([
+    "pokesprite-cached-asset",
+    "pokemon-sprites",
+    36,
+    "mega",
+    false,
+  ]);
+});
+
+test("resolves Froslass Mega to the correctly spelled pokemon-sprites icon", () => {
+  const metadata = parsePokeSpriteMetadata({
+    ...pokespritePokemonMetadata,
+    "478": {
+      idx: "478",
+      name: { eng: "Froslass" },
+      slug: { eng: "froslass" },
+      "gen-8": {
+        forms: {
+          $: { has_female: false, has_right: false },
+        },
+      },
+    },
+  });
+  const froslass =
+    findExactSpecies("froslass") ?? throwMissingSpecies("froslass");
+  const mega = {
+    displayName: "Froslass Mega",
+    isDefault: false,
+    pokemonName: "froslass-mega",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/10285/",
+    spriteFormKey: "mega",
+  };
+
+  expect(
+    resolvePokemonFormPokeSpriteAsset(metadata, froslass, mega),
+  ).toMatchObject({
+    formKey: "mega",
+    shiny: false,
+    slug: "froslass-mega",
+    source: "pokemon-sprites",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/froslass-mega.png",
+  });
+});
+
+test("falls back to PokeAPI sprites for shiny unsupported Pokemon forms", () => {
+  const metadata = parsePokeSpriteMetadata({
+    ...pokespritePokemonMetadata,
+    "036": {
+      idx: "036",
+      name: { eng: "Clefable" },
+      slug: { eng: "clefable" },
+      "gen-8": {
+        forms: {
+          $: { has_female: false, has_right: false },
+        },
+      },
+    },
+  });
+  const clefable =
+    findExactSpecies("clefable") ?? throwMissingSpecies("clefable");
+  const mega = {
+    displayName: "Clefable Mega",
+    isDefault: false,
+    pokemonName: "clefable-mega",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/10278/",
+    spriteFormKey: "mega",
+  };
+
   expect(
     resolvePokemonFormPokeSpriteAsset(metadata, clefable, mega, true),
   ).toMatchObject({
@@ -389,6 +457,13 @@ test("falls back to PokeAPI sprites for unsupported Pokemon forms", () => {
     source: "pokeapi-sprites",
     url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/10278.png",
   });
+  expect(pokespriteCachedAssetQueryKey(clefable, true, mega)).toEqual([
+    "pokesprite-cached-asset",
+    "pokeapi-sprites",
+    36,
+    "mega",
+    true,
+  ]);
 });
 
 test("keeps failing when unsupported Pokemon forms cannot use the fallback", () => {
@@ -470,6 +545,38 @@ test("caches PokeSprite PNG assets by resolved URL", async () => {
     ).toEqual(pngBytes);
     expect(requestCount).toBe(1);
   } finally {
+    await rm(cacheDirectory, { force: true, recursive: true });
+  }
+});
+
+test("bypasses cached PokeSprite PNG assets during development", async () => {
+  const cacheDirectory = await mkdtemp(join(tmpdir(), "pkdx-pokesprite-"));
+  const originalNodeEnv = Bun.env.NODE_ENV;
+  const asset = pikachuDefaultSpriteAsset();
+  let requestCount = 0;
+
+  server.use(
+    http.get(asset.url, () => {
+      requestCount += 1;
+      return new HttpResponse(new Uint8Array([requestCount]));
+    }),
+  );
+
+  try {
+    Bun.env.NODE_ENV = "development";
+    const cached = await cachePokeSpriteAsset(asset, { cacheDirectory });
+    await cachePokeSpriteAsset(asset, { cacheDirectory });
+
+    expect(requestCount).toBe(2);
+    expect(
+      new Uint8Array(await Bun.file(cached.filePath).arrayBuffer()),
+    ).toEqual(new Uint8Array([2]));
+  } finally {
+    if (originalNodeEnv === undefined) {
+      delete Bun.env.NODE_ENV;
+    } else {
+      Bun.env.NODE_ENV = originalNodeEnv;
+    }
     await rm(cacheDirectory, { force: true, recursive: true });
   }
 });

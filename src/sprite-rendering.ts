@@ -61,10 +61,12 @@ type PngChunk = {
 };
 
 type RgbaReadContext = {
+  bitDepth: number;
   palette: Uint8Array | undefined;
   scanlineOffset: number;
   source: Uint8Array;
   transparency: Uint8Array | undefined;
+  x: number;
 };
 
 type PaletteEntry = readonly [red: number, green: number, blue: number];
@@ -269,9 +271,9 @@ function decodePng(source: ArrayBuffer): DecodedPng {
   const channels = channelCount(chunks.colorType);
   const scanlines = unfilterScanlines(
     inflateSync(Buffer.concat(chunks.idatChunks)),
-    chunks.width,
     chunks.height,
-    channels,
+    scanlineByteWidth(chunks, channels),
+    filterByteWidth(chunks, channels),
   );
 
   return {
@@ -344,6 +346,18 @@ function assertSupportedPng(chunks: PngChunks) {
     throw new Error("PNG is missing valid IHDR dimensions");
   }
 
+  if (chunks.bitDepth === 8) {
+    return;
+  }
+
+  if (chunks.colorType === 3 && [1, 2, 4].includes(chunks.bitDepth)) {
+    return;
+  }
+
+  if (chunks.colorType === 0 && [1, 2, 4].includes(chunks.bitDepth)) {
+    return;
+  }
+
   if (chunks.bitDepth !== 8) {
     throw new Error(`Unsupported PNG bit depth: ${chunks.bitDepth}`);
   }
@@ -358,17 +372,19 @@ function rgbaPixelsFromScanlines(
     return scanlines;
   }
 
-  const stride = chunks.width * channels;
+  const stride = scanlineByteWidth(chunks, channels);
   const pixels = new Uint8Array(chunks.width * chunks.height * 4);
 
   for (let y = 0; y < chunks.height; y += 1) {
     for (let x = 0; x < chunks.width; x += 1) {
       pixels.set(
         readRgbaPixel(chunks.colorType, {
+          bitDepth: chunks.bitDepth,
           palette: chunks.palette,
-          scanlineOffset: y * stride + x * channels,
+          scanlineOffset: scanlineOffset(chunks, channels, stride, x, y),
           source: scanlines,
           transparency: chunks.transparency,
+          x,
         }),
         (y * chunks.width + x) * 4,
       );
@@ -394,8 +410,11 @@ const rgbaPixelReaders: Record<
   number,
   (context: RgbaReadContext) => readonly [number, number, number, number]
 > = {
-  0: ({ scanlineOffset, source, transparency }) => {
-    const gray = source[scanlineOffset] ?? 0;
+  0: ({ bitDepth, scanlineOffset, source, transparency, x }) => {
+    const gray = scaleSampleToByte(
+      readPackedSample(source, scanlineOffset, x, bitDepth),
+      bitDepth,
+    );
     return [gray, gray, gray, alphaForGrayscale(gray, transparency)];
   },
   2: ({ scanlineOffset, source, transparency }) => {
@@ -404,12 +423,12 @@ const rgbaPixelReaders: Record<
     const blue = source[scanlineOffset + 2] ?? 0;
     return [red, green, blue, alphaForRgb(red, green, blue, transparency)];
   },
-  3: ({ palette, scanlineOffset, source, transparency }) => {
+  3: ({ bitDepth, palette, scanlineOffset, source, transparency, x }) => {
     if (palette === undefined) {
       throw new Error("Indexed PNG is missing a palette");
     }
 
-    const paletteIndex = source[scanlineOffset] ?? 0;
+    const paletteIndex = readPackedSample(source, scanlineOffset, x, bitDepth);
     const paletteOffset = paletteIndex * 3;
     return [
       palette[paletteOffset] ?? 0,
@@ -432,18 +451,17 @@ const rgbaPixelReaders: Record<
 
 function unfilterScanlines(
   inflated: Uint8Array,
-  width: number,
   height: number,
-  channels: number,
+  stride: number,
+  bytesPerPixel: number,
 ): Uint8Array {
-  const stride = width * channels;
   const scanlines = new Uint8Array(stride * height);
   let sourceOffset = 0;
 
   for (let y = 0; y < height; y += 1) {
     const filter = inflated[sourceOffset] ?? 0;
     unfilterScanlineRow({
-      channels,
+      bytesPerPixel,
       filter,
       rowOffset: y * stride,
       scanlines,
@@ -459,7 +477,7 @@ function unfilterScanlines(
 }
 
 function unfilterScanlineRow({
-  channels,
+  bytesPerPixel,
   filter,
   rowOffset,
   scanlines,
@@ -468,7 +486,7 @@ function unfilterScanlineRow({
   stride,
   y,
 }: {
-  channels: number;
+  bytesPerPixel: number;
   filter: number;
   rowOffset: number;
   scanlines: Uint8Array;
@@ -487,7 +505,7 @@ function unfilterScanlineRow({
 
   for (let x = 0; x < stride; x += 1) {
     const context = unfilterContext({
-      channels,
+      bytesPerPixel,
       rowOffset,
       scanlines,
       stride,
@@ -505,29 +523,29 @@ function unfilterScanlineRow({
 }
 
 function unfilterContext({
-  channels,
+  bytesPerPixel,
   rowOffset,
   scanlines,
   stride,
   x,
   y,
 }: {
-  channels: number;
+  bytesPerPixel: number;
   rowOffset: number;
   scanlines: Uint8Array;
   stride: number;
   x: number;
   y: number;
 }) {
-  const hasLeft = x >= channels;
+  const hasLeft = x >= bytesPerPixel;
   const hasPreviousRow = y > 0;
 
   return {
-    left: hasLeft ? (scanlines[rowOffset + x - channels] ?? 0) : 0,
+    left: hasLeft ? (scanlines[rowOffset + x - bytesPerPixel] ?? 0) : 0,
     up: hasPreviousRow ? (scanlines[rowOffset + x - stride] ?? 0) : 0,
     upLeft:
       hasPreviousRow && hasLeft
-        ? (scanlines[rowOffset + x - stride - channels] ?? 0)
+        ? (scanlines[rowOffset + x - stride - bytesPerPixel] ?? 0)
         : 0,
   };
 }
@@ -790,6 +808,53 @@ function channelCount(colorType: number): number {
   }
 
   return count;
+}
+
+function scanlineByteWidth(chunks: PngChunks, channels: number): number {
+  return Math.ceil((chunks.width * chunks.bitDepth * channels) / 8);
+}
+
+function filterByteWidth(chunks: PngChunks, channels: number): number {
+  return Math.max(1, Math.ceil((chunks.bitDepth * channels) / 8));
+}
+
+function scanlineOffset(
+  chunks: PngChunks,
+  channels: number,
+  stride: number,
+  x: number,
+  y: number,
+): number {
+  const rowOffset = y * stride;
+  if (chunks.bitDepth === 8) {
+    return rowOffset + x * channels;
+  }
+
+  return rowOffset + Math.floor((x * chunks.bitDepth * channels) / 8);
+}
+
+function readPackedSample(
+  source: Uint8Array,
+  byteOffset: number,
+  x: number,
+  bitDepth: number,
+): number {
+  if (bitDepth === 8) {
+    return source[byteOffset] ?? 0;
+  }
+
+  const samplesPerByte = 8 / bitDepth;
+  const shift = (samplesPerByte - 1 - (x % samplesPerByte)) * bitDepth;
+  const mask = (1 << bitDepth) - 1;
+  return ((source[byteOffset] ?? 0) >> shift) & mask;
+}
+
+function scaleSampleToByte(sample: number, bitDepth: number): number {
+  if (bitDepth === 8) {
+    return sample;
+  }
+
+  return Math.round((sample * 255) / ((1 << bitDepth) - 1));
 }
 
 function paethPredictor(left: number, up: number, upLeft: number): number {

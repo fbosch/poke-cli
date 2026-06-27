@@ -24,8 +24,62 @@ const scarletVioletDefaultSpriteSlugs: Record<string, string> = {
   ogerpon: "ogerpon-teal-mask",
   squawkabilly: "squawkabilly-green-plumage",
 };
+const pokemonSpritesFormFallbackNames = new Set([
+  "absol-mega-z",
+  "barbaracle-mega",
+  "baxcalibur-mega",
+  "chandelure-mega",
+  "chesnaught-mega",
+  "chimecho-mega",
+  "clefable-mega",
+  "crabominable-mega",
+  "darkrai-mega",
+  "delphox-mega",
+  "dragalge-mega",
+  "dragonite-mega",
+  "drampa-mega",
+  "eelektross-mega",
+  "emboar-mega",
+  "excadrill-mega",
+  "falinks-mega",
+  "feraligatr-mega",
+  "floette-mega",
+  "froslass-mega",
+  "garchomp-mega-z",
+  "glimmora-mega",
+  "golisopod-mega",
+  "golurk-mega",
+  "greninja-mega",
+  "hawlucha-mega",
+  "heatran-mega",
+  "lucario-mega-z",
+  "magearna-mega",
+  "magearna-original-mega",
+  "malamar-mega",
+  "meganium-mega",
+  "meowstic-male-mega",
+  "pyroar-mega",
+  "raichu-mega-x",
+  "raichu-mega-y",
+  "scolipede-mega",
+  "scovillain-mega",
+  "scrafty-mega",
+  "skarmory-mega",
+  "staraptor-mega",
+  "starmie-mega",
+  "tatsugiri-curly-mega",
+  "tatsugiri-droopy-mega",
+  "tatsugiri-stretchy-mega",
+  "victreebel-mega",
+  "zeraora-mega",
+  "zygarde-mega",
+]);
 
-type PokeSpriteSource = "gen-8" | "pokeapi-sprites" | "scarlet-violet";
+type PokeSpriteSource =
+  | "gen-8"
+  | "pokeapi-sprites"
+  | "pokemon-sprites"
+  | "scarlet-violet";
 
 export type PokeSpriteMetadataQueryKey = readonly [
   "pokesprite-metadata",
@@ -147,7 +201,7 @@ export function pokespriteRenderedSpriteQueryKey(
 ): PokeSpriteRenderedSpriteQueryKey {
   return [
     "pokesprite-rendered-sprite",
-    pokeSpriteSourceForSpecies(species),
+    pokeSpriteSourceForRequest(species, form, shiny),
     species.dexNumber,
     form?.spriteFormKey ?? "$",
     shiny,
@@ -201,7 +255,7 @@ export function pokespriteCachedAssetQueryKey(
 ): PokeSpriteCachedAssetQueryKey {
   return [
     "pokesprite-cached-asset",
-    pokeSpriteSourceForSpecies(species),
+    pokeSpriteSourceForRequest(species, form, shiny),
     species.dexNumber,
     form?.spriteFormKey ?? "$",
     shiny,
@@ -260,7 +314,7 @@ export function pokespriteRenderedSpritePlaceholderData(
 ): RenderedSprite | undefined {
   if (
     previousQueryKey?.[0] !== "pokesprite-rendered-sprite" ||
-    previousQueryKey[1] !== pokeSpriteSourceForSpecies(species) ||
+    previousQueryKey[1] !== pokeSpriteSourceForRequest(species, form, false) ||
     previousQueryKey[2] !== species.dexNumber ||
     previousQueryKey[3] !== (form?.spriteFormKey ?? "$") ||
     previousQueryKey[5] !== renderOptions.maxWidth ||
@@ -291,6 +345,16 @@ export function resolvePokemonFormPokeSpriteAsset(
   shiny = false,
 ): PokeSpriteAssetReference {
   const key = formKey(form);
+  const pokemonSpritesFallback = resolvePokemonSpritesFormAsset(
+    metadata,
+    species,
+    form,
+    shiny,
+  );
+  if (pokemonSpritesFallback !== undefined) {
+    return pokemonSpritesFallback;
+  }
+
   const asset = resolveOptionalPokeSpriteAsset(metadata, species, key, shiny);
   if (asset !== undefined) {
     return asset;
@@ -395,6 +459,32 @@ function resolvePokeApiSpriteAsset(
   };
 }
 
+function resolvePokemonSpritesFormAsset(
+  metadata: PokeSpriteMetadata,
+  species: SpeciesIndexEntry,
+  form: PokemonForm | undefined,
+  shiny: boolean,
+): PokeSpriteAssetReference | undefined {
+  if (
+    shiny ||
+    form === undefined ||
+    form.isDefault ||
+    pokemonSpritesFormFallbackNames.has(form.pokemonName) === false
+  ) {
+    return undefined;
+  }
+
+  return {
+    formKey: form.spriteFormKey,
+    metadata:
+      metadata[dexKey(species.dexNumber)] ?? pokemonMetadataForSpecies(species),
+    shiny,
+    slug: form.pokemonName,
+    source: "pokemon-sprites",
+    url: `${scarletVioletSpriteBaseUrl}pokemon/regular/${form.pokemonName}.png`,
+  };
+}
+
 function pokemonIdFromUrl(url: string): number | undefined {
   let pathname: string;
   try {
@@ -426,14 +516,7 @@ function resolveScarletVioletSpriteAsset(
   formKey: string,
   shiny: boolean,
 ): PokeSpriteAssetReference {
-  const metadata =
-    entry ??
-    ({
-      dexNumber: species.dexNumber,
-      forms: {},
-      name: species.name,
-      slug: species.slug,
-    } satisfies PokeSpritePokemonMetadata);
+  const metadata = entry ?? pokemonMetadataForSpecies(species);
   const slug = scarletVioletSpriteSlug(metadata.slug, formKey);
 
   return {
@@ -443,6 +526,17 @@ function resolveScarletVioletSpriteAsset(
     slug,
     source: "scarlet-violet",
     url: `${scarletVioletSpriteBaseUrl}pokemon/${shiny ? "shiny" : "regular"}/${slug}.png`,
+  };
+}
+
+function pokemonMetadataForSpecies(
+  species: SpeciesIndexEntry,
+): PokeSpritePokemonMetadata {
+  return {
+    dexNumber: species.dexNumber,
+    forms: {},
+    name: species.name,
+    slug: species.slug,
   };
 }
 
@@ -458,7 +552,7 @@ export async function cachePokeSpriteAsset(
   const filePath = pokeSpriteAssetCachePath(cacheDirectory, asset.url);
   const cachedFile = Bun.file(filePath);
 
-  if (await cachedFile.exists()) {
+  if (Bun.env.NODE_ENV !== "development" && (await cachedFile.exists())) {
     return { ...asset, filePath };
   }
 
@@ -510,6 +604,25 @@ function pokeSpriteSourceForSpecies(
   return species.dexNumber >= scarletVioletFirstDexNumber
     ? "scarlet-violet"
     : "gen-8";
+}
+
+function pokeSpriteSourceForRequest(
+  species: SpeciesIndexEntry,
+  form: PokemonForm | undefined,
+  shiny: boolean,
+): PokeSpriteSource {
+  if (pokeSpriteSourceForSpecies(species) === "scarlet-violet") {
+    return "scarlet-violet";
+  }
+
+  if (
+    form !== undefined &&
+    pokemonSpritesFormFallbackNames.has(form.pokemonName)
+  ) {
+    return shiny ? "pokeapi-sprites" : "pokemon-sprites";
+  }
+
+  return "gen-8";
 }
 
 function spriteSlug(speciesSlug: string, formKey: string): string {

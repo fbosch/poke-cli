@@ -75,7 +75,7 @@ export async function prepareTerminalSpriteImage(
 ): Promise<PreparedTerminalImage> {
   const cacheKey = `${filePath}:${canvas.width.toString()}x${canvas.height.toString()}`;
   const cached = preparedImagePromises.get(cacheKey);
-  if (cached !== undefined) {
+  if (Bun.env.NODE_ENV !== "development" && cached !== undefined) {
     return cached;
   }
 
@@ -98,6 +98,7 @@ async function prepareTerminalSpriteImageUncached(
   const cachedMetadata =
     await readPreparedTerminalImageMetadata(metadataFilePath);
   if (
+    Bun.env.NODE_ENV !== "development" &&
     cachedMetadata !== undefined &&
     (await Bun.file(croppedFilePath).exists())
   ) {
