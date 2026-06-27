@@ -394,6 +394,7 @@ function LoadedDetailFooter({
           { key: "e", action: "evolution" },
           ...(hasAlternateForms ? [{ key: "f", action: "forms" }] : []),
           { key: "d/D", action: "desc" },
+          { key: "o", action: "web" },
           { key: "s", action: shiny ? "regular" : "shiny" },
           { key: "/", action: "search" },
           { key: "q/esc", action: "exit" },

@@ -14,6 +14,7 @@ import {
   type DetailNavigationDelta,
   type DetailState,
 } from "../app-state";
+import { openPokemonDbPokedexEntry } from "../external-links";
 import type { PokemonDetail, PokemonForm } from "../pokemon-detail";
 import {
   pokemonAbilityDetailsQueryOptions,
@@ -57,6 +58,11 @@ export function App({ initialQuery = "", onExit }: AppProps) {
   const [state, setState] = useState(() => createInitialAppState(initialQuery));
 
   useKeyboard((key: KeyEvent) => {
+    if (shouldOpenPokemonDbEntry(state, key)) {
+      void openPokemonDbPokedexEntry(state.detail.species);
+      return;
+    }
+
     setState((current) => {
       return applyAppKey(current, key);
     });
@@ -127,6 +133,18 @@ export function App({ initialQuery = "", onExit }: AppProps) {
   }
 
   return <SearchView query={state.query} selectedIndex={state.selectedIndex} />;
+}
+
+function shouldOpenPokemonDbEntry(
+  state: ReturnType<typeof createInitialAppState>,
+  key: KeyEvent,
+): state is DetailState & { detail: NonNullable<DetailState["detail"]> } {
+  return (
+    key.name === "o" &&
+    state.screen === "detail" &&
+    state.detail !== undefined &&
+    state.detailOverlay === undefined
+  );
 }
 
 type DetailViewProps = {
