@@ -14,6 +14,15 @@ export function SearchView({
 }) {
   const results = searchResults(query, selectedIndex);
   const hasSearchableQuery = query.trim().length >= minimumSearchQueryLength;
+  const resultOptions = results.map((result) => ({
+    description: "",
+    name: `#${result.dexNumbers[1] ?? result.dexNumbers[0]} ${result.name}`,
+    value: result.slug,
+  }));
+  const selectedResultIndex = Math.max(
+    0,
+    results.findIndex((result) => result.selected),
+  );
 
   return (
     <box
@@ -66,23 +75,18 @@ export function SearchView({
                 No species match this query.
               </text>
             ) : null}
-            {results.map((result) => {
-              const label = ` #${result.dexNumbers[1] ?? result.dexNumbers[0]} ${result.name}`;
-
-              return (
-                <text
-                  key={result.slug}
-                  attributes={
-                    result.selected ? textStyles.selected : textStyles.normal
-                  }
-                  {...(result.selected
-                    ? { bg: colors.selected, fg: colors.selectedText }
-                    : {})}
-                >
-                  {label.padEnd(searchPanelWidth)}
-                </text>
-              );
-            })}
+            {results.length > 0 ? (
+              <select
+                height={results.length}
+                options={resultOptions}
+                selectedBackgroundColor={colors.selected}
+                selectedIndex={selectedResultIndex}
+                selectedTextColor={colors.selectedText}
+                showDescription={false}
+                textColor={colors.keyHint}
+                width={searchPanelWidth}
+              />
+            ) : null}
           </box>
         ) : null}
       </box>
