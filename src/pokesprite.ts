@@ -15,6 +15,15 @@ import {
 const pokespriteBaseUrl =
   "https://raw.githubusercontent.com/msikma/pokesprite/master/";
 const pokespriteMetadataUrl = `${pokespriteBaseUrl}data/pokemon.json`;
+const scarletVioletSpriteBaseUrl =
+  "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/";
+const scarletVioletFirstDexNumber = 906;
+const scarletVioletDefaultSpriteSlugs: Record<string, string> = {
+  ogerpon: "ogerpon-teal-mask",
+  squawkabilly: "squawkabilly-green-plumage",
+};
+
+type PokeSpriteSource = "gen-8" | "scarlet-violet";
 
 export type PokeSpriteMetadataQueryKey = readonly [
   "pokesprite-metadata",
@@ -26,7 +35,7 @@ type ResourceQueryClient = Pick<QueryClient, "fetchQuery">;
 
 type PokeSpriteRenderedSpriteQueryKey = readonly [
   "pokesprite-rendered-sprite",
-  generation: "gen-8",
+  source: PokeSpriteSource,
   dexNumber: number,
   formKey: string,
   shiny: boolean,
@@ -36,7 +45,7 @@ type PokeSpriteRenderedSpriteQueryKey = readonly [
 
 type PokeSpriteCachedAssetQueryKey = readonly [
   "pokesprite-cached-asset",
-  generation: "gen-8",
+  source: PokeSpriteSource,
   dexNumber: number,
   formKey: string,
   shiny: boolean,
@@ -87,6 +96,7 @@ export type PokeSpriteAssetReference = {
   metadata: PokeSpritePokemonMetadata;
   shiny: boolean;
   slug: string;
+  source: PokeSpriteSource;
   url: string;
 };
 
@@ -135,7 +145,7 @@ export function pokespriteRenderedSpriteQueryKey(
 ): PokeSpriteRenderedSpriteQueryKey {
   return [
     "pokesprite-rendered-sprite",
-    "gen-8",
+    pokeSpriteSourceForSpecies(species),
     species.dexNumber,
     form?.spriteFormKey ?? "$",
     shiny,
@@ -187,7 +197,7 @@ export function pokespriteCachedAssetQueryKey(
 ): PokeSpriteCachedAssetQueryKey {
   return [
     "pokesprite-cached-asset",
-    "gen-8",
+    pokeSpriteSourceForSpecies(species),
     species.dexNumber,
     form?.spriteFormKey ?? "$",
     shiny,
@@ -223,7 +233,7 @@ export function pokespriteRenderedSpritePlaceholderData(
 ): RenderedSprite | undefined {
   if (
     previousQueryKey?.[0] !== "pokesprite-rendered-sprite" ||
-    previousQueryKey[1] !== "gen-8" ||
+    previousQueryKey[1] !== pokeSpriteSourceForSpecies(species) ||
     previousQueryKey[2] !== species.dexNumber ||
     previousQueryKey[3] !== (form?.spriteFormKey ?? "$") ||
     previousQueryKey[5] !== renderOptions.maxWidth ||
@@ -268,6 +278,10 @@ export function resolvePokeSpriteAsset(
   shiny = false,
 ): PokeSpriteAssetReference {
   const entry = metadata[dexKey(species.dexNumber)];
+  if (pokeSpriteSourceForSpecies(species) === "scarlet-violet") {
+    return resolveScarletVioletSpriteAsset(entry, species, formKey, shiny);
+  }
+
   if (entry === undefined) {
     throw new Error(`PokeSprite metadata missing #${species.dexNumber}`);
   }
@@ -287,7 +301,34 @@ export function resolvePokeSpriteAsset(
     metadata: entry,
     shiny,
     slug,
+    source: "gen-8",
     url: `${pokespriteBaseUrl}pokemon-gen8/${shiny ? "shiny" : "regular"}/${slug}.png`,
+  };
+}
+
+function resolveScarletVioletSpriteAsset(
+  entry: PokeSpritePokemonMetadata | undefined,
+  species: SpeciesIndexEntry,
+  formKey: string,
+  shiny: boolean,
+): PokeSpriteAssetReference {
+  const metadata =
+    entry ??
+    ({
+      dexNumber: species.dexNumber,
+      forms: {},
+      name: species.name,
+      slug: species.slug,
+    } satisfies PokeSpritePokemonMetadata);
+  const slug = scarletVioletSpriteSlug(metadata.slug, formKey);
+
+  return {
+    formKey,
+    metadata,
+    shiny,
+    slug,
+    source: "scarlet-violet",
+    url: `${scarletVioletSpriteBaseUrl}pokemon/${shiny ? "shiny" : "regular"}/${slug}.png`,
   };
 }
 
@@ -349,10 +390,26 @@ function getDefaultPokeSpriteAssetCacheDirectory(): string {
   return join(baseDirectory, "pkdx", "pokesprite-assets");
 }
 
+function pokeSpriteSourceForSpecies(
+  species: SpeciesIndexEntry,
+): PokeSpriteSource {
+  return species.dexNumber >= scarletVioletFirstDexNumber
+    ? "scarlet-violet"
+    : "gen-8";
+}
+
 function spriteSlug(speciesSlug: string, formKey: string): string {
   if (formKey === "$") {
     return speciesSlug;
   }
 
   return `${speciesSlug}-${formKey}`;
+}
+
+function scarletVioletSpriteSlug(speciesSlug: string, formKey: string): string {
+  if (formKey !== "$") {
+    return spriteSlug(speciesSlug, formKey);
+  }
+
+  return scarletVioletDefaultSpriteSlugs[speciesSlug] ?? speciesSlug;
 }

@@ -7,8 +7,8 @@ The system SHALL expose a `pkdx` executable that launches the Terminal Pokédex 
 - **WHEN** the user runs `pkdx` without arguments
 - **THEN** the app opens the Search state
 
-#### Scenario: Exit keys close the app
-- **WHEN** the user presses `q`, Escape, or Ctrl-C in a top-level app state
+#### Scenario: Exit key closes the app
+- **WHEN** the user presses Ctrl-C in a top-level app state
 - **THEN** the app exits cleanly
 
 ### Requirement: Argument launch behavior

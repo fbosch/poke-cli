@@ -859,9 +859,5 @@ function wrapIndex(index: number, count: number): number {
 }
 
 function isExitKey(key: AppKey): boolean {
-  return (
-    key.name === "q" ||
-    key.name === "escape" ||
-    (key.name === "c" && key.ctrl === true)
-  );
+  return key.name === "c" && key.ctrl === true;
 }

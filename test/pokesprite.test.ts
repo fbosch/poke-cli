@@ -136,6 +136,48 @@ test("resolves form aliases and shiny asset URLs", () => {
   });
 });
 
+test("resolves Scarlet and Violet fallback sprite URLs for Gen 9", () => {
+  const metadata = parsePokeSpriteMetadata(pokespritePokemonMetadata);
+  const sprigatito =
+    findExactSpecies("sprigatito") ?? throwMissingSpecies("sprigatito");
+  const dudunsparce =
+    findExactSpecies("dudunsparce") ?? throwMissingSpecies("dudunsparce");
+  const ogerpon = findExactSpecies("ogerpon") ?? throwMissingSpecies("ogerpon");
+  const squawkabilly =
+    findExactSpecies("squawkabilly") ?? throwMissingSpecies("squawkabilly");
+
+  expect(resolveDefaultPokeSpriteAsset(metadata, sprigatito)).toMatchObject({
+    formKey: "$",
+    shiny: false,
+    slug: "sprigatito",
+    source: "scarlet-violet",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/sprigatito.png",
+  });
+  expect(
+    resolvePokeSpriteAsset(metadata, dudunsparce, "three-segment", true),
+  ).toMatchObject({
+    formKey: "three-segment",
+    shiny: true,
+    slug: "dudunsparce-three-segment",
+    source: "scarlet-violet",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/shiny/dudunsparce-three-segment.png",
+  });
+  expect(resolveDefaultPokeSpriteAsset(metadata, ogerpon)).toMatchObject({
+    formKey: "$",
+    shiny: false,
+    slug: "ogerpon-teal-mask",
+    source: "scarlet-violet",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/ogerpon-teal-mask.png",
+  });
+  expect(resolveDefaultPokeSpriteAsset(metadata, squawkabilly)).toMatchObject({
+    formKey: "$",
+    shiny: false,
+    slug: "squawkabilly-green-plumage",
+    source: "scarlet-violet",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/squawkabilly-green-plumage.png",
+  });
+});
+
 test("keys rendered Sprite cache by dex number and shiny state", () => {
   const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
 
@@ -163,6 +205,18 @@ test("keys rendered Sprite cache by dex number and shiny state", () => {
       maxWidth: 40,
     }),
   ).toEqual(["pokesprite-rendered-sprite", "gen-8", 25, "$", false, 40, 15]);
+
+  const sprigatito =
+    findExactSpecies("sprigatito") ?? throwMissingSpecies("sprigatito");
+  expect(pokespriteRenderedSpriteQueryKey(sprigatito)).toEqual([
+    "pokesprite-rendered-sprite",
+    "scarlet-violet",
+    906,
+    "$",
+    false,
+    undefined,
+    undefined,
+  ]);
 });
 
 test("keys cached sprite assets by dex number and shiny state", () => {
@@ -181,6 +235,16 @@ test("keys cached sprite assets by dex number and shiny state", () => {
     25,
     "$",
     true,
+  ]);
+
+  const sprigatito =
+    findExactSpecies("sprigatito") ?? throwMissingSpecies("sprigatito");
+  expect(pokespriteCachedAssetQueryKey(sprigatito)).toEqual([
+    "pokesprite-cached-asset",
+    "scarlet-violet",
+    906,
+    "$",
+    false,
   ]);
 });
 

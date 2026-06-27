@@ -330,11 +330,22 @@ test("s remains Search text input", () => {
   });
 });
 
-test.each([
-  { key: { name: "q" }, label: "q" },
-  { key: { name: "escape" }, label: "Escape" },
-  { key: { name: "c", ctrl: true }, label: "Ctrl-C" },
-])("exits cleanly on $label", ({ key }) => {
+test("q remains Search text input", () => {
+  const next = applyAppKey(createInitialAppState(), {
+    name: "q",
+    sequence: "q",
+  });
+
+  expect(next).toMatchObject({
+    screen: "search",
+    query: "q",
+    selectedIndex: 0,
+    shouldExit: false,
+  });
+});
+
+test("exits cleanly on Ctrl-C", () => {
+  const key = { name: "c", ctrl: true };
   const next = applyAppKey(createInitialAppState(), key);
 
   expect(next.shouldExit).toBe(true);
