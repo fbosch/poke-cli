@@ -144,27 +144,27 @@ export function pokemonDetailQueryOptions(
       );
       const forms = buildPokemonForms(species, speciesResource);
       const selectedForm = getSelectedPokemonForm(forms, species.slug, form);
-      const pokemonResource = await queryClient.fetchQuery(
-        pokeApiResourceQueryOptions({
-          parse: parsePokemonResource,
-          url: selectedForm.pokemonUrl,
-        }),
-      );
-      const evolutionChainResource = await queryClient.fetchQuery(
-        pokeApiResourceQueryOptions({
-          parse: parseEvolutionChainResource,
-          url: speciesResource.evolution_chain.url,
-        }),
-      );
-      const formVersionGroup = await loadPokemonFormVersionGroup(
-        selectedForm,
-        queryClient,
-      );
-      const excludedVersionGroups = await loadExcludedFlavorTextVersionGroups(
-        forms,
-        selectedForm,
-        queryClient,
-      );
+      const [
+        pokemonResource,
+        evolutionChainResource,
+        formVersionGroup,
+        excludedVersionGroups,
+      ] = await Promise.all([
+        queryClient.fetchQuery(
+          pokeApiResourceQueryOptions({
+            parse: parsePokemonResource,
+            url: selectedForm.pokemonUrl,
+          }),
+        ),
+        queryClient.fetchQuery(
+          pokeApiResourceQueryOptions({
+            parse: parseEvolutionChainResource,
+            url: speciesResource.evolution_chain.url,
+          }),
+        ),
+        loadPokemonFormVersionGroup(selectedForm, queryClient),
+        loadExcludedFlavorTextVersionGroups(forms, selectedForm, queryClient),
+      ]);
 
       return buildPokemonDetail(
         species,
