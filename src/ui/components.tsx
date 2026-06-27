@@ -5,6 +5,64 @@ export const detailCardWidth = 100;
 const detailTitleWidth = 94;
 
 const statBarWidth = 22;
+const statColors: Record<string, (typeof colors)[keyof typeof colors]> = {
+  Attack: colors.statAttack,
+  Defense: colors.statDefense,
+  HP: colors.statHp,
+  "Sp. Attack": colors.statSpecialAttack,
+  "Sp. Defense": colors.statSpecialDefense,
+  Speed: colors.statSpeed,
+};
+const typeColors: Record<string, (typeof colors)[keyof typeof colors]> = {
+  Bug: colors.typeBug,
+  Dark: colors.typeDark,
+  Dragon: colors.typeDragon,
+  Electric: colors.typeElectric,
+  Fairy: colors.typeFairy,
+  Fighting: colors.typeFighting,
+  Fire: colors.typeFire,
+  Flying: colors.typeFlying,
+  Ghost: colors.typeGhost,
+  Grass: colors.typeGrass,
+  Ground: colors.typeGround,
+  Ice: colors.typeIce,
+  Normal: colors.typeNormal,
+  Poison: colors.typePoison,
+  Psychic: colors.typePsychic,
+  Rock: colors.typeRock,
+  Steel: colors.typeSteel,
+  Water: colors.typeWater,
+};
+const lightTextTypes = new Set([
+  "Dark",
+  "Dragon",
+  "Fighting",
+  "Fire",
+  "Ghost",
+  "Poison",
+  "Psychic",
+  "Water",
+]);
+const shortTypeLabels: Record<string, string> = {
+  Bug: "BUG",
+  Dark: "DAR",
+  Dragon: "DRA",
+  Electric: "ELE",
+  Fairy: "FAI",
+  Fighting: "FIG",
+  Fire: "FIR",
+  Flying: "FLY",
+  Ghost: "GHO",
+  Grass: "GRA",
+  Ground: "GRO",
+  Ice: "ICE",
+  Normal: "NOR",
+  Poison: "POI",
+  Psychic: "PSY",
+  Rock: "ROC",
+  Steel: "STE",
+  Water: "WAT",
+};
 
 export function DetailScreen({ children }: { children: ReactNode }) {
   return (
@@ -316,81 +374,19 @@ function KeyHintView({ hint }: { hint: KeyHint }) {
 }
 
 function statColor(name: string) {
-  const statColors: Record<string, (typeof colors)[keyof typeof colors]> = {
-    Attack: colors.statAttack,
-    Defense: colors.statDefense,
-    HP: colors.statHp,
-    "Sp. Attack": colors.statSpecialAttack,
-    "Sp. Defense": colors.statSpecialDefense,
-    Speed: colors.statSpeed,
-  };
-
   return statColors[name] ?? colors.muted;
 }
 
 function typeColor(type: string) {
-  const typeColors: Record<string, (typeof colors)[keyof typeof colors]> = {
-    Bug: colors.typeBug,
-    Dark: colors.typeDark,
-    Dragon: colors.typeDragon,
-    Electric: colors.typeElectric,
-    Fairy: colors.typeFairy,
-    Fighting: colors.typeFighting,
-    Fire: colors.typeFire,
-    Flying: colors.typeFlying,
-    Ghost: colors.typeGhost,
-    Grass: colors.typeGrass,
-    Ground: colors.typeGround,
-    Ice: colors.typeIce,
-    Normal: colors.typeNormal,
-    Poison: colors.typePoison,
-    Psychic: colors.typePsychic,
-    Rock: colors.typeRock,
-    Steel: colors.typeSteel,
-    Water: colors.typeWater,
-  };
-
   return typeColors[type] ?? colors.muted;
 }
 
 function typeTextColor(type: string) {
-  const lightTextTypes = new Set([
-    "Dark",
-    "Dragon",
-    "Fighting",
-    "Fire",
-    "Ghost",
-    "Poison",
-    "Psychic",
-    "Water",
-  ]);
-
   return lightTextTypes.has(type)
     ? colors.typeTagTextLight
     : colors.typeTagTextDark;
 }
 
 function shortTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    Bug: "BUG",
-    Dark: "DAR",
-    Dragon: "DRA",
-    Electric: "ELE",
-    Fairy: "FAI",
-    Fighting: "FIG",
-    Fire: "FIR",
-    Flying: "FLY",
-    Ghost: "GHO",
-    Grass: "GRA",
-    Ground: "GRO",
-    Ice: "ICE",
-    Normal: "NOR",
-    Poison: "POI",
-    Psychic: "PSY",
-    Rock: "ROC",
-    Steel: "STE",
-    Water: "WAT",
-  };
-
-  return labels[type] ?? type.slice(0, 3).toUpperCase();
+  return shortTypeLabels[type] ?? type.slice(0, 3).toUpperCase();
 }
