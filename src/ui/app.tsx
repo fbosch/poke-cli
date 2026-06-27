@@ -18,6 +18,7 @@ import type { PokemonDetail, PokemonForm } from "../pokemon-detail";
 import {
   pokemonAbilityDetailsQueryOptions,
   pokemonDetailQueryOptions,
+  pokemonFormTargetKey,
 } from "../pokemon-detail";
 import { pokespriteRenderedSpriteQueryOptions } from "../pokesprite";
 import {
@@ -137,11 +138,17 @@ type DetailViewProps = {
 type DetailLoadProps = Pick<
   DetailViewProps,
   "onLoadFailed" | "onLoadSucceeded" | "state"
->;
+> & { target: DetailQueryTarget };
 type AbilityDetailsPreloadProps = Pick<
   DetailViewProps,
   "onAbilityDetailsLoadFailed" | "onAbilityDetailsLoaded" | "state"
 >;
+type DetailQueryTarget = {
+  form: PokemonForm | undefined;
+  species: SpeciesIndexEntry;
+};
+
+const detailQueryDebounceMs = 100;
 
 function DetailView({
   onAbilityDetailsLoadFailed,
@@ -152,21 +159,27 @@ function DetailView({
   onSelectSpecies,
   state,
 }: DetailViewProps) {
+  const detailTarget = useDebouncedDetailTarget(
+    state.species,
+    state.form,
+    detailQueryDebounceMs,
+  );
   usePokemonDetailLoad({
     onLoadFailed,
     onLoadSucceeded,
     state,
+    target: detailTarget,
   });
   usePokemonSpritePrefetch({
     enabled: state.status !== "error",
-    form: state.form,
+    form: detailTarget.form,
     shiny: state.shiny,
-    species: state.species,
+    species: detailTarget.species,
   });
   useAdjacentPokemonPrefetch({
     enabled: state.status !== "error",
     shiny: state.shiny,
-    species: state.species,
+    species: detailTarget.species,
   });
   useAbilityDetailsPreload({
     onAbilityDetailsLoadFailed,
@@ -251,37 +264,56 @@ function usePokemonDetailLoad({
   onLoadFailed,
   onLoadSucceeded,
   state,
+  target,
 }: DetailLoadProps) {
   const queryClient = useQueryClient();
   const retryErrorUpdatedAt = useRef<number | undefined>(undefined);
+  const targetIsCurrent = detailTargetsMatch(target, state.species, state.form);
   const detail = useQuery({
-    ...pokemonDetailQueryOptions(state.species, queryClient, state.form),
-    enabled: state.status !== "error",
+    ...pokemonDetailQueryOptions(target.species, queryClient, target.form),
+    enabled: state.status !== "error" && targetIsCurrent,
   });
 
   useEffect(() => {
-    if (detail.data !== undefined && state.status !== "ready") {
+    if (
+      targetIsCurrent &&
+      detail.data !== undefined &&
+      state.status !== "ready"
+    ) {
       retryErrorUpdatedAt.current = undefined;
-      onLoadSucceeded(state.species, detail.data);
+      onLoadSucceeded(target.species, detail.data);
     }
-  }, [detail.data, onLoadSucceeded, state.species, state.status]);
+  }, [
+    detail.data,
+    onLoadSucceeded,
+    state.status,
+    target.species,
+    targetIsCurrent,
+  ]);
 
   useEffect(() => {
-    if (state.retryToken > 0 && state.status === "loading") {
+    if (targetIsCurrent && state.retryToken > 0 && state.status === "loading") {
       retryErrorUpdatedAt.current = detail.errorUpdatedAt;
       void detail.refetch();
     }
-  }, [detail.errorUpdatedAt, detail.refetch, state.retryToken, state.status]);
+  }, [
+    detail.errorUpdatedAt,
+    detail.refetch,
+    state.retryToken,
+    state.status,
+    targetIsCurrent,
+  ]);
 
   useEffect(() => {
     if (
       detail.isError &&
       !detail.isFetching &&
+      targetIsCurrent &&
       state.status !== "error" &&
       retryErrorUpdatedAt.current !== detail.errorUpdatedAt
     ) {
       retryErrorUpdatedAt.current = undefined;
-      onLoadFailed(state.species, state.form, detail.error);
+      onLoadFailed(target.species, target.form, detail.error);
     }
   }, [
     detail.error,
@@ -289,10 +321,49 @@ function usePokemonDetailLoad({
     detail.isError,
     detail.isFetching,
     onLoadFailed,
-    state.form,
-    state.species,
     state.status,
+    target.form,
+    target.species,
+    targetIsCurrent,
   ]);
+}
+
+function useDebouncedDetailTarget(
+  species: SpeciesIndexEntry,
+  form: PokemonForm | undefined,
+  delayMs: number,
+): DetailQueryTarget {
+  const [target, setTarget] = useState<DetailQueryTarget>(() => ({
+    form,
+    species,
+  }));
+
+  useEffect(() => {
+    if (detailTargetsMatch(target, species, form)) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setTarget({ form, species });
+    }, delayMs);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [delayMs, form, species, target]);
+
+  return target;
+}
+
+function detailTargetsMatch(
+  target: DetailQueryTarget,
+  species: SpeciesIndexEntry,
+  form: PokemonForm | undefined,
+): boolean {
+  return (
+    target.species.slug === species.slug &&
+    pokemonFormTargetKey(target.form) === pokemonFormTargetKey(form)
+  );
 }
 
 function usePokemonSpritePrefetch({
