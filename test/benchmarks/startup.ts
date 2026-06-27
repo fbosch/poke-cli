@@ -37,7 +37,7 @@ const results = benchmarks.map((benchmark) => {
       {
         env: {
           ...Bun.env,
-          PKDX_DISABLE_QUERY_CACHE: "1",
+          NODE_ENV: "development",
         },
         stderr: "pipe",
         stdout: "pipe",

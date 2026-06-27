@@ -37,10 +37,10 @@ Network: disabled by `test/support/disable-network.ts`
 | sprite-rendering | xterm-color-index | 500 | 1.86 | 268188 |
 | sprite-rendering | render-png-small-16x16 | 500 | 26.08 | 19173 |
 | sprite-rendering | render-png-medium-64x64 | 500 | 100.18 | 4991 |
-| startup | import-search-module | 25 | 528.72 | 47 |
-| startup | import-ui-root | 25 | 7354.81 | 3 |
-| startup | create-initial-search-state | 25 | 1448.29 | 17 |
-| startup | create-initial-detail-state | 25 | 1652.06 | 15 |
+| startup | import-search-module | 25 | 496.81 | 50 |
+| startup | import-ui-root | 25 | 7584.92 | 3 |
+| startup | create-initial-search-state | 25 | 1450.35 | 17 |
+| startup | create-initial-detail-state | 25 | 1467.51 | 17 |
 | type-matchups | single-electric | 1000000 | 610.26 | 1638640 |
 | type-matchups | dual-water-flying | 1000000 | 919.20 | 1087906 |
 | type-matchups | dual-fire-flying | 1000000 | 961.14 | 1040428 |
