@@ -9,6 +9,7 @@ import {
   pokemonDetailQueryKey,
   pokemonDetailQueryOptions,
 } from "../src/pokemon-detail";
+import type { PokemonDetail } from "../src/pokemon-detail";
 import { createAppQueryClient, queryCachePolicies } from "../src/query-cache";
 import type { SpeciesIndexEntry } from "../src/search";
 import {
@@ -208,6 +209,70 @@ test("excludes unsupported Gmax varieties from selectable Pokemon Forms", () => 
       spriteFormKey: "starter",
     },
   ]);
+});
+
+test("loads carried regional form by sprite form key", async () => {
+  const vulpixAlolaForm = {
+    displayName: "Vulpix Alola",
+    isDefault: false,
+    pokemonName: "vulpix-alola",
+    pokemonUrl: "https://pokeapi.co/api/v2/pokemon/vulpix-alola/",
+    spriteFormKey: "alola",
+  };
+  const ninetalesIndexEntry: SpeciesIndexEntry = {
+    aliases: ["038", "38"],
+    dexNumber: 38,
+    dexNumbers: ["38", "038"],
+    name: "Ninetales",
+    slug: "ninetales",
+  };
+
+  server.use(
+    http.get("https://pokeapi.co/api/v2/pokemon-species/38/", () => {
+      return HttpResponse.json({
+        ...pikachuSpecies,
+        id: 38,
+        name: "ninetales",
+        names: [{ language: { name: "en", url: "" }, name: "Ninetales" }],
+        varieties: [
+          {
+            is_default: true,
+            pokemon: {
+              name: "ninetales",
+              url: "https://pokeapi.co/api/v2/pokemon/38/",
+            },
+          },
+          {
+            is_default: false,
+            pokemon: {
+              name: "ninetales-alola",
+              url: "https://pokeapi.co/api/v2/pokemon/ninetales-alola/",
+            },
+          },
+        ],
+      });
+    }),
+    http.get("https://pokeapi.co/api/v2/pokemon/ninetales-alola/", () => {
+      return HttpResponse.json({ ...pikachuPokemon, name: "ninetales-alola" });
+    }),
+    http.get("https://pokeapi.co/api/v2/evolution-chain/10/", () => {
+      return HttpResponse.json(pikachuEvolutionChain);
+    }),
+  );
+
+  const detail = (await executeQuery(
+    pokemonDetailQueryOptions(
+      ninetalesIndexEntry,
+      createResourceQueryClient(),
+      vulpixAlolaForm,
+    ),
+  )) as PokemonDetail;
+
+  expect(detail.form).toMatchObject({
+    pokemonName: "ninetales-alola",
+    spriteFormKey: "alola",
+  });
+  expect(detail.name).toBe("Ninetales Alola");
 });
 
 test("builds PokemonAbilityDetail from validated PokeAPI Ability resources", () => {

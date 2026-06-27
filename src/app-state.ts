@@ -5,7 +5,11 @@ import {
   searchSpecies,
   type SpeciesIndexEntry,
 } from "./search";
-import type { PokemonDetail, PokemonForm } from "./pokemon-detail";
+import type {
+  PokemonDetail,
+  PokemonEvolution,
+  PokemonForm,
+} from "./pokemon-detail";
 import { pokemonFormTargetKey } from "./pokemon-detail";
 
 export type AppState = SearchState | DetailState;
@@ -552,7 +556,7 @@ function loadDetailSpeciesState(
     descriptionIndex: 0,
     errorMessage: undefined,
     detailOverlay: undefined,
-    form: undefined,
+    form: carryOverDetailForm(state, species),
     retryToken: 0,
     species,
     status: "loading",
@@ -566,7 +570,7 @@ function detailLoadSucceededState(
 ): DetailState {
   if (
     state.species.slug !== species.slug ||
-    pokemonFormTargetKey(state.form) !== pokemonFormTargetKey(detail.form)
+    !pokemonFormsMatch(state.form, detail.form)
   ) {
     return state;
   }
@@ -580,6 +584,7 @@ function detailLoadSucceededState(
     detail: { detail, form: detail.form, species },
     detailOverlay: undefined,
     errorMessage: undefined,
+    form: detail.form,
     status: "ready",
   };
 }
@@ -592,7 +597,7 @@ function detailLoadFailedState(
 ): DetailState {
   if (
     state.species.slug !== species.slug ||
-    pokemonFormTargetKey(state.form) !== pokemonFormTargetKey(form)
+    !pokemonFormsMatch(state.form, form)
   ) {
     return state;
   }
@@ -613,6 +618,60 @@ function openLoadedAbilityOverlay(state: DetailState): DetailState {
     ...state,
     detailOverlay: "abilities",
   };
+}
+
+function carryOverDetailForm(
+  state: DetailState,
+  species: SpeciesIndexEntry,
+): PokemonForm | undefined {
+  const form = state.detail?.form ?? state.form;
+  if (form === undefined || form.isDefault) {
+    return undefined;
+  }
+
+  return isSpeciesInLoadedEvolutionChain(state, species) ? form : undefined;
+}
+
+function isSpeciesInLoadedEvolutionChain(
+  state: DetailState,
+  species: SpeciesIndexEntry,
+): boolean {
+  const root = state.detail?.detail.evolutionChain.root;
+  if (root === undefined) {
+    return false;
+  }
+
+  return evolutionChainIncludesSpecies(root, species.name);
+}
+
+function evolutionChainIncludesSpecies(
+  evolution: PokemonEvolution,
+  speciesName: string,
+): boolean {
+  if (evolution.name === speciesName) {
+    return true;
+  }
+
+  return evolution.evolvesTo.some((child) =>
+    evolutionChainIncludesSpecies(child, speciesName),
+  );
+}
+
+function pokemonFormsMatch(
+  requested: PokemonForm | undefined,
+  loaded: PokemonForm | undefined,
+): boolean {
+  if (pokemonFormTargetKey(requested) === pokemonFormTargetKey(loaded)) {
+    return true;
+  }
+
+  return (
+    requested !== undefined &&
+    loaded !== undefined &&
+    requested.isDefault === false &&
+    loaded.isDefault === false &&
+    requested.spriteFormKey === loaded.spriteFormKey
+  );
 }
 
 function retryDetailLoad(state: DetailState): DetailState {

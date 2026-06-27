@@ -12,7 +12,7 @@ import {
   type DetailState,
 } from "../src/app-state";
 import { getInitialSearchQuery, searchScreenTitle } from "../src/cli";
-import type { PokemonDetail } from "../src/pokemon-detail";
+import type { PokemonDetail, PokemonForm } from "../src/pokemon-detail";
 import {
   createFileStorage,
   persistedQueryMaxAge,
@@ -597,6 +597,89 @@ test("Detail form selector loads the selected form", () => {
   });
 });
 
+test("Detail next navigation carries Alolan form to Ninetales", () => {
+  const state = loadedAlolanVulpixDetailState();
+  const next = applyAppKey(state, { name: "right" });
+  const loaded = detailLoadSucceeded(
+    next as DetailState,
+    findExactSpecies("ninetales") ?? throwMissingSpecies("ninetales"),
+    alolanNinetalesDetail,
+  );
+
+  expect(next).toMatchObject({
+    screen: "detail",
+    form: {
+      pokemonName: "vulpix-alola",
+      spriteFormKey: "alola",
+    },
+    species: { slug: "ninetales" },
+    status: "loading",
+  });
+  expect(loaded).toMatchObject({
+    screen: "detail",
+    detail: {
+      detail: {
+        form: {
+          pokemonName: "ninetales-alola",
+          spriteFormKey: "alola",
+        },
+        name: "Ninetales Alola",
+      },
+    },
+    form: {
+      pokemonName: "ninetales-alola",
+      spriteFormKey: "alola",
+    },
+    status: "ready",
+  });
+});
+
+test("Detail evolution selection carries Alolan form to Ninetales", () => {
+  const state = loadedAlolanVulpixDetailState();
+  const ninetales =
+    findExactSpecies("ninetales") ?? throwMissingSpecies("ninetales");
+  const next = loadDetailSpecies(state, ninetales);
+  const loaded = detailLoadSucceeded(next, ninetales, alolanNinetalesDetail);
+
+  expect(next).toMatchObject({
+    screen: "detail",
+    form: {
+      pokemonName: "vulpix-alola",
+      spriteFormKey: "alola",
+    },
+    species: { slug: "ninetales" },
+    status: "loading",
+  });
+  expect(loaded).toMatchObject({
+    screen: "detail",
+    detail: {
+      detail: {
+        form: {
+          pokemonName: "ninetales-alola",
+          spriteFormKey: "alola",
+        },
+      },
+    },
+    form: {
+      pokemonName: "ninetales-alola",
+      spriteFormKey: "alola",
+    },
+    status: "ready",
+  });
+});
+
+test("Detail dex navigation resets regional form outside evolution chain", () => {
+  const state = loadedAlolanNinetalesDetailState();
+  const next = applyAppKey(state, { name: "right" });
+
+  expect(next).toMatchObject({
+    screen: "detail",
+    form: undefined,
+    species: { slug: "jigglypuff" },
+    status: "loading",
+  });
+});
+
 test("Detail returns to Search on slash", () => {
   const detail = applyAppKey(createInitialAppState("pika"), { name: "enter" });
   const next = applyAppKey(detail, { name: "/" });
@@ -660,4 +743,97 @@ function loadedPikachuDetailState(): DetailState {
     findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu"),
     pikachuDetail,
   );
+}
+
+const vulpixDefaultForm = pokemonForm("Vulpix (Default)", true, "vulpix", "$");
+const alolanVulpixForm = pokemonForm(
+  "Vulpix Alola",
+  false,
+  "vulpix-alola",
+  "alola",
+);
+const ninetalesDefaultForm = pokemonForm(
+  "Ninetales (Default)",
+  true,
+  "ninetales",
+  "$",
+);
+const alolanNinetalesForm = pokemonForm(
+  "Ninetales Alola",
+  false,
+  "ninetales-alola",
+  "alola",
+);
+const vulpixEvolutionChain = {
+  root: {
+    evolvesTo: [
+      {
+        evolvesTo: [],
+        method: "use item, ice stone",
+        name: "Ninetales",
+      },
+    ],
+    method: undefined,
+    name: "Vulpix",
+  },
+};
+const alolanVulpixDetail = pokemonDetailWithForms(
+  "Vulpix Alola",
+  [vulpixDefaultForm, alolanVulpixForm],
+  alolanVulpixForm,
+);
+const alolanNinetalesDetail = pokemonDetailWithForms(
+  "Ninetales Alola",
+  [ninetalesDefaultForm, alolanNinetalesForm],
+  alolanNinetalesForm,
+);
+
+function loadedAlolanVulpixDetailState(): DetailState {
+  const vulpix = findExactSpecies("vulpix") ?? throwMissingSpecies("vulpix");
+  const loading = {
+    ...(createInitialAppState("vulpix") as DetailState),
+    form: alolanVulpixForm,
+  };
+
+  return detailLoadSucceeded(loading, vulpix, alolanVulpixDetail);
+}
+
+function loadedAlolanNinetalesDetailState(): DetailState {
+  const ninetales =
+    findExactSpecies("ninetales") ?? throwMissingSpecies("ninetales");
+  const loading = {
+    ...(createInitialAppState("ninetales") as DetailState),
+    form: alolanNinetalesForm,
+  };
+
+  return detailLoadSucceeded(loading, ninetales, alolanNinetalesDetail);
+}
+
+function pokemonForm(
+  displayName: string,
+  isDefault: boolean,
+  pokemonName: string,
+  spriteFormKey: string,
+): PokemonForm {
+  return {
+    displayName,
+    isDefault,
+    pokemonName,
+    pokemonUrl: `pokemon/${pokemonName}`,
+    spriteFormKey,
+  };
+}
+
+function pokemonDetailWithForms(
+  name: string,
+  forms: PokemonForm[],
+  form: PokemonForm,
+): PokemonDetail {
+  return {
+    ...pikachuDetail,
+    evolutionChain: vulpixEvolutionChain,
+    form,
+    forms,
+    name,
+  };
 }

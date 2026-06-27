@@ -458,9 +458,7 @@ function getSelectedPokemonForm(
   const form =
     selectedForm === undefined
       ? forms.find((candidate) => candidate.isDefault)
-      : forms.find(
-          (candidate) => candidate.pokemonName === selectedForm.pokemonName,
-        );
+      : findSelectedPokemonForm(forms, selectedForm);
 
   if (form === undefined) {
     throw new Error(
@@ -471,6 +469,23 @@ function getSelectedPokemonForm(
   }
 
   return form;
+}
+
+function findSelectedPokemonForm(
+  forms: readonly PokemonForm[],
+  selectedForm: PokemonForm,
+): PokemonForm | undefined {
+  return (
+    forms.find(
+      (candidate) => candidate.pokemonName === selectedForm.pokemonName,
+    ) ??
+    forms.find(
+      (candidate) =>
+        selectedForm.isDefault === false &&
+        candidate.isDefault === false &&
+        candidate.spriteFormKey === selectedForm.spriteFormKey,
+    )
+  );
 }
 
 function getEnglishSpeciesName(
