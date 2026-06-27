@@ -33,6 +33,11 @@ type EvolutionRoute = {
   steps: EvolutionRouteStep[];
 };
 
+const evolutionChartRowsCache = new WeakMap<
+  PokemonEvolutionChain,
+  EvolutionChartRow[]
+>();
+
 export function EvolutionViewer({
   evolutionChain,
   onClose,
@@ -156,22 +161,33 @@ export function buildEvolutionFlowchartLinks(
 function buildEvolutionChartRows(
   evolutionChain: PokemonEvolutionChain,
 ): EvolutionChartRow[] {
+  const cached = evolutionChartRowsCache.get(evolutionChain);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   const routes = buildEvolutionRoutes(evolutionChain.root);
   if (routes.length === 0) {
-    return [
+    const rows = [
       pokemonNameRow(
         evolutionChain.root.name,
         "",
         evolutionChain.root.speciesName ?? evolutionChain.root.name,
       ),
     ];
+    evolutionChartRowsCache.set(evolutionChain, rows);
+    return rows;
   }
 
   if (routes.length === 1) {
-    return [routePathRow(routes[0] ?? throwMissingRoute())];
+    const rows = [routePathRow(routes[0] ?? throwMissingRoute())];
+    evolutionChartRowsCache.set(evolutionChain, rows);
+    return rows;
   }
 
-  return branchingRouteRows(routes);
+  const rows = branchingRouteRows(routes);
+  evolutionChartRowsCache.set(evolutionChain, rows);
+  return rows;
 }
 
 function buildEvolutionRoutes(evolution: PokemonEvolution): EvolutionRoute[] {
