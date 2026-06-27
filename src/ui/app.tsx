@@ -621,7 +621,7 @@ function DetailErrorView({ state }: { state: DetailState }) {
           hints={[
             { key: "r", action: "retry" },
             { key: "/", action: "search" },
-            { key: "q/esc", action: "exit" },
+            { key: "ctrl-c", action: "exit" },
           ]}
         />
       </InstructionFooter>

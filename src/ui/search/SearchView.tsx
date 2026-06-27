@@ -89,7 +89,7 @@ export function SearchView({
             { key: "ctrl+u", action: "clear" },
             { key: "ctrl+j/k", action: "move" },
             { key: "enter", action: "open" },
-            { key: "esc", action: "exit" },
+            { key: "ctrl-c", action: "exit" },
           ]}
         />
       </InstructionFooter>

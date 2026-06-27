@@ -85,7 +85,12 @@ export function LoadedDetailView({
             `#${detail.dexNumber.toString().padStart(3, "0")} ${detail.name}`
               .length
           }
-          right={<TypeLabels types={detail.types} />}
+          right={
+            <span>
+              <span> </span>
+              <TypeLabels types={detail.types} />
+            </span>
+          }
           rightWidth={typeLabelsWidth(detail.types)}
         />
         {errorMessage !== undefined ? (
@@ -405,7 +410,7 @@ function LoadedDetailFooter({
           { key: "o", action: "web" },
           { key: "s", action: shiny ? "regular" : "shiny" },
           { key: "/", action: "search" },
-          { key: "q/esc", action: "exit" },
+          { key: "ctrl-c", action: "exit" },
         ]}
       />
     </InstructionFooter>
