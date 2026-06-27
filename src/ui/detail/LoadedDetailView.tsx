@@ -112,6 +112,11 @@ export function LoadedDetailView({
               form={detail.form}
               shiny={shiny}
               species={loadedSpecies}
+              terminalImagesEnabled={
+                !abilityViewerOpen &&
+                !evolutionViewerOpen &&
+                formSelectorSelectedIndex === undefined
+              }
             />
           </box>
           <box style={{ flexDirection: "column", width: detailInfoPanelWidth }}>

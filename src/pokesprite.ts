@@ -34,6 +34,14 @@ type PokeSpriteRenderedSpriteQueryKey = readonly [
   maxHeight: number | undefined,
 ];
 
+type PokeSpriteCachedAssetQueryKey = readonly [
+  "pokesprite-cached-asset",
+  generation: "gen-8",
+  dexNumber: number,
+  formKey: string,
+  shiny: boolean,
+];
+
 const formMetadataSchema = z
   .object({
     has_female: z.boolean().optional(),
@@ -168,6 +176,40 @@ export function pokespriteRenderedSpriteQueryOptions(
         form,
         renderOptions,
       ),
+    ...queryCachePolicies.pokespriteMetadata,
+  });
+}
+
+export function pokespriteCachedAssetQueryKey(
+  species: SpeciesIndexEntry,
+  shiny = false,
+  form?: PokemonForm,
+): PokeSpriteCachedAssetQueryKey {
+  return [
+    "pokesprite-cached-asset",
+    "gen-8",
+    species.dexNumber,
+    form?.spriteFormKey ?? "$",
+    shiny,
+  ];
+}
+
+export function pokespriteCachedAssetQueryOptions(
+  species: SpeciesIndexEntry,
+  queryClient: ResourceQueryClient,
+  shiny = false,
+  form?: PokemonForm,
+) {
+  return queryOptions({
+    queryKey: pokespriteCachedAssetQueryKey(species, shiny, form),
+    queryFn: async (): Promise<CachedPokeSpriteAsset> => {
+      const metadata = await queryClient.fetchQuery(
+        pokespriteMetadataQueryOptions(),
+      );
+      return cachePokeSpriteAsset(
+        resolvePokemonFormPokeSpriteAsset(metadata, species, form, shiny),
+      );
+    },
     ...queryCachePolicies.pokespriteMetadata,
   });
 }

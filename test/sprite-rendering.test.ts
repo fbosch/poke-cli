@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test";
 import { deflateSync } from "node:zlib";
-import { renderPngSprite, xtermColorIndex } from "../src/sprite-rendering";
+import {
+  cropPngSpriteToOpaqueBounds,
+  fitPngSpriteToTerminalCanvas,
+  renderPngSprite,
+  xtermColorIndex,
+} from "../src/sprite-rendering";
 
 test("quantizes RGB colors to xterm 256-color indexes", () => {
   expect(xtermColorIndex(255, 0, 0)).toBe(196);
@@ -47,6 +52,58 @@ test("renders trimmed PNG pixels as terminal half-block cells", () => {
     ],
     width: 2,
   });
+});
+
+test("crops transparent PNG padding for terminal image rendering", () => {
+  const transparent = [0, 0, 0, 0] satisfies Rgba;
+  const red = [255, 0, 0, 255] satisfies Rgba;
+  const png = createRgbaPng(4, 5, [
+    transparent,
+    transparent,
+    transparent,
+    transparent,
+    transparent,
+    red,
+    red,
+    transparent,
+    transparent,
+    red,
+    red,
+    transparent,
+    transparent,
+    red,
+    transparent,
+    transparent,
+    transparent,
+    transparent,
+    transparent,
+    transparent,
+  ]);
+
+  const cropped = cropPngSpriteToOpaqueBounds(png);
+
+  expect(cropped).toMatchObject({ height: 3, width: 2, x: 1, y: 1 });
+  if (cropped === undefined) {
+    throw new Error("Expected cropped sprite");
+  }
+  expect(renderPngSprite(cropped.source)).toMatchObject({
+    height: 2,
+    width: 2,
+  });
+});
+
+test("fits cropped terminal images to the same cell dimensions as sprites", () => {
+  const image = { height: 56, width: 68 };
+
+  expect(
+    fitPngSpriteToTerminalCanvas(image, { maxHeight: 20, maxWidth: 40 }),
+  ).toEqual({ height: 16, width: 40 });
+  expect(
+    fitPngSpriteToTerminalCanvas(
+      { height: 20, width: 20 },
+      { maxHeight: 20, maxWidth: 40 },
+    ),
+  ).toEqual({ height: 10, width: 20 });
 });
 
 test("renders fully transparent PNGs as empty sprites", () => {

@@ -7,6 +7,7 @@ import {
   cachePokeSpriteAsset,
   parsePokeSpriteMetadata,
   PokeSpriteResourceError,
+  pokespriteCachedAssetQueryKey,
   pokespriteMetadataQueryKey,
   pokespriteMetadataQueryOptions,
   pokespriteRenderedSpritePlaceholderData,
@@ -162,6 +163,25 @@ test("keys rendered Sprite cache by dex number and shiny state", () => {
       maxWidth: 40,
     }),
   ).toEqual(["pokesprite-rendered-sprite", "gen-8", 25, "$", false, 40, 15]);
+});
+
+test("keys cached sprite assets by dex number and shiny state", () => {
+  const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
+
+  expect(pokespriteCachedAssetQueryKey(pikachu)).toEqual([
+    "pokesprite-cached-asset",
+    "gen-8",
+    25,
+    "$",
+    false,
+  ]);
+  expect(pokespriteCachedAssetQueryKey(pikachu, true)).toEqual([
+    "pokesprite-cached-asset",
+    "gen-8",
+    25,
+    "$",
+    true,
+  ]);
 });
 
 test("maps Pokemon Forms to PokeSprite regular and shiny assets", () => {

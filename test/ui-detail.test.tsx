@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { createElement } from "react";
 import { isValidElement } from "react";
 import { DamageTakenPanel } from "../src/ui/detail/DamageTakenPanel";
 import {
@@ -10,6 +11,7 @@ import { FormSelector } from "../src/ui/detail/FormSelector";
 import {
   PokemonSpriteArtwork,
   PokemonSpriteFallback,
+  PokemonSpriteInlineImage,
   PokemonSpriteShinyMarker,
 } from "../src/ui/detail/PokemonSpritePanel";
 import {
@@ -53,6 +55,16 @@ test("renders terminal sprite artwork rows", () => {
       ],
       width: 2,
     },
+  });
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+});
+
+test("renders inline image sprite artwork", () => {
+  const element = createElement(PokemonSpriteInlineImage, {
+    filePath: "/tmp/pikachu.png",
+    support: { protocol: "kitty" },
   });
 
   expect(element).toBeDefined();

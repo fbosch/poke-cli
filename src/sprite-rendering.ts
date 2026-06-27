@@ -1,4 +1,4 @@
-import { inflateSync } from "node:zlib";
+import { deflateSync, inflateSync } from "node:zlib";
 
 const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 const alphaOpaqueThreshold = 128;
@@ -18,6 +18,17 @@ export type RenderedSprite = {
 export type RenderPngSpriteOptions = {
   maxHeight?: number;
   maxWidth?: number;
+};
+
+export type PngOpaqueBounds = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+export type CroppedPngSprite = PngOpaqueBounds & {
+  source: ArrayBuffer;
 };
 
 type DecodedPng = {
@@ -72,6 +83,50 @@ export function renderPngSprite(
   options: RenderPngSpriteOptions = {},
 ): RenderedSprite {
   return renderDecodedPng(decodePng(source), options);
+}
+
+export function cropPngSpriteToOpaqueBounds(
+  source: ArrayBuffer,
+): CroppedPngSprite | undefined {
+  const image = decodePng(source);
+  const bounds = transparentTrimBounds(image);
+  if (bounds === undefined) {
+    return undefined;
+  }
+
+  const width = bounds.right - bounds.left + 1;
+  const height = bounds.bottom - bounds.top + 1;
+  return {
+    height,
+    source: encodeRgbaPng(croppedRgbaPixels(image, bounds), width, height),
+    width,
+    x: bounds.left,
+    y: bounds.top,
+  };
+}
+
+export function fitPngSpriteToTerminalCanvas(
+  image: { height: number; width: number },
+  options: RenderPngSpriteOptions = {},
+): { height: number; width: number } {
+  const native = { height: Math.ceil(image.height / 2), width: image.width };
+  if (spriteFits({ ...native, rows: [] }, options)) {
+    return native;
+  }
+
+  const dimensions = fittedSpriteDimensions(
+    {
+      bottom: image.height - 1,
+      left: 0,
+      right: image.width - 1,
+      top: 0,
+    },
+    options,
+  );
+  return {
+    height: Math.ceil(dimensions.pixelHeight / 2),
+    width: dimensions.width,
+  };
 }
 
 function renderDecodedPng(
@@ -577,6 +632,103 @@ function transparentTrimBounds(image: DecodedPng) {
   }
 
   return right === -1 ? undefined : { bottom, left, right, top };
+}
+
+function croppedRgbaPixels(
+  image: DecodedPng,
+  bounds: SpriteBounds,
+): Uint8Array {
+  const width = bounds.right - bounds.left + 1;
+  const height = bounds.bottom - bounds.top + 1;
+  const pixels = new Uint8Array(width * height * 4);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const sourceOffset = pixelOffset(image, bounds.left + x, bounds.top + y);
+      const targetOffset = (y * width + x) * 4;
+      pixels.set(
+        image.pixels.subarray(sourceOffset, sourceOffset + 4),
+        targetOffset,
+      );
+    }
+  }
+
+  return pixels;
+}
+
+function encodeRgbaPng(
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): ArrayBuffer {
+  const scanlines = new Uint8Array(height * (1 + width * 4));
+  for (let y = 0; y < height; y += 1) {
+    const scanlineOffset = y * (1 + width * 4);
+    scanlines[scanlineOffset] = 0;
+    scanlines.set(
+      pixels.subarray(y * width * 4, (y + 1) * width * 4),
+      scanlineOffset + 1,
+    );
+  }
+
+  const encoded = concatByteArrays([
+    pngSignature,
+    encodePngChunk("IHDR", pngHeaderData(width, height)),
+    encodePngChunk("IDAT", deflateSync(scanlines)),
+    encodePngChunk("IEND", new Uint8Array()),
+  ]);
+  const result = new ArrayBuffer(encoded.byteLength);
+  new Uint8Array(result).set(encoded);
+  return result;
+}
+
+function pngHeaderData(width: number, height: number): Uint8Array {
+  const data = new Uint8Array(13);
+  const view = new DataView(data.buffer);
+  view.setUint32(0, width);
+  view.setUint32(4, height);
+  data[8] = 8;
+  data[9] = 6;
+  data[10] = 0;
+  data[11] = 0;
+  data[12] = 0;
+  return data;
+}
+
+function encodePngChunk(type: string, data: Uint8Array): Uint8Array {
+  const chunk = new Uint8Array(12 + data.length);
+  const view = new DataView(chunk.buffer);
+  const typeBytes = Uint8Array.from(
+    [...type].map((character) => character.charCodeAt(0)),
+  );
+  view.setUint32(0, data.length);
+  chunk.set(typeBytes, 4);
+  chunk.set(data, 8);
+  view.setUint32(8 + data.length, crc32(concatByteArrays([typeBytes, data])));
+  return chunk;
+}
+
+function concatByteArrays(chunks: readonly Uint8Array[]): Uint8Array {
+  const result = new Uint8Array(
+    chunks.reduce((total, chunk) => total + chunk.length, 0),
+  );
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function crc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 function pixelOffset(image: DecodedPng, x: number, y: number): number {

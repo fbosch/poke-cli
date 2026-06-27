@@ -20,7 +20,10 @@ import {
   pokemonDetailQueryOptions,
   pokemonFormTargetKey,
 } from "../pokemon-detail";
-import { pokespriteRenderedSpriteQueryOptions } from "../pokesprite";
+import {
+  pokespriteCachedAssetQueryOptions,
+  pokespriteRenderedSpriteQueryOptions,
+} from "../pokesprite";
 import {
   findExactSpecies,
   getSpeciesByDexDelta,
@@ -47,6 +50,7 @@ import {
   detailStatsPanelWidth,
 } from "./detail/LoadedDetailView";
 import { SearchView } from "./search/SearchView";
+import { useTerminalImageSupport } from "./useTerminalImageSupport";
 
 type AppProps = {
   initialQuery?: string;
@@ -429,9 +433,14 @@ function usePokemonSpritePrefetch({
   species: SpeciesIndexEntry;
 }) {
   const queryClient = useQueryClient();
+  const terminalImageSupport = useTerminalImageSupport();
+  useQuery({
+    ...pokespriteCachedAssetQueryOptions(species, queryClient, shiny, form),
+    enabled: enabled && terminalImageSupport !== undefined,
+  });
   useQuery({
     ...pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny, form),
-    enabled,
+    enabled: enabled && terminalImageSupport === undefined,
   });
 }
 
@@ -480,6 +489,7 @@ function useAdjacentPokemonPrefetch({
   species: SpeciesIndexEntry;
 }) {
   const queryClient = useQueryClient();
+  const terminalImageSupport = useTerminalImageSupport();
   useEffect(() => {
     if (enabled === false) {
       return;
@@ -489,15 +499,22 @@ function useAdjacentPokemonPrefetch({
       queryClient,
       getSpeciesByDexDelta(species, -1),
       shiny,
+      terminalImageSupport !== undefined,
     );
-    prefetchPokemonDetail(queryClient, getSpeciesByDexDelta(species, 1), shiny);
-  }, [enabled, queryClient, shiny, species]);
+    prefetchPokemonDetail(
+      queryClient,
+      getSpeciesByDexDelta(species, 1),
+      shiny,
+      terminalImageSupport !== undefined,
+    );
+  }, [enabled, queryClient, shiny, species, terminalImageSupport]);
 }
 
 function prefetchPokemonDetail(
   queryClient: ReturnType<typeof useQueryClient>,
   species: SpeciesIndexEntry | undefined,
   shiny: boolean,
+  terminalImagesEnabled: boolean,
 ) {
   if (species === undefined) {
     return;
@@ -506,6 +523,13 @@ function prefetchPokemonDetail(
   void queryClient.prefetchQuery(
     pokemonDetailQueryOptions(species, queryClient),
   );
+  if (terminalImagesEnabled) {
+    void queryClient.prefetchQuery(
+      pokespriteCachedAssetQueryOptions(species, queryClient, shiny),
+    );
+    return;
+  }
+
   void queryClient.prefetchQuery(
     pokespriteRenderedSpriteQueryOptions(species, queryClient, shiny),
   );
