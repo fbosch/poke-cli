@@ -1,6 +1,10 @@
 import { benchmarkResult } from "../support/benchmark";
 
 const iterations = Number(Bun.env.PKDX_STARTUP_BENCH_ITERATIONS ?? 25);
+const networkGuardPath = new URL(
+  "../support/disable-network.ts",
+  import.meta.url,
+).pathname;
 
 const benchmarks = [
   {
@@ -28,14 +32,17 @@ const results = benchmarks.map((benchmark) => {
   const start = Bun.nanoseconds();
 
   for (let index = 0; index < iterations; index += 1) {
-    const child = Bun.spawnSync(["bun", "-e", benchmark.script], {
-      env: {
-        ...Bun.env,
-        PKDX_DISABLE_QUERY_CACHE: "1",
+    const child = Bun.spawnSync(
+      ["bun", "--preload", networkGuardPath, "-e", benchmark.script],
+      {
+        env: {
+          ...Bun.env,
+          PKDX_DISABLE_QUERY_CACHE: "1",
+        },
+        stderr: "pipe",
+        stdout: "pipe",
       },
-      stderr: "pipe",
-      stdout: "pipe",
-    });
+    );
 
     if (child.exitCode !== 0) {
       throw new Error(
