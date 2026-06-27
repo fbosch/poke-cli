@@ -11,7 +11,11 @@ import {
   loadDetailSpecies,
   type DetailState,
 } from "../src/app-state";
-import { getInitialSearchQuery, searchScreenTitle } from "../src/cli";
+import {
+  getInitialSearchQuery,
+  parseCliOptions,
+  searchScreenTitle,
+} from "../src/cli";
 import type { PokemonDetail, PokemonForm } from "../src/pokemon-detail";
 import {
   createFileStorage,
@@ -94,6 +98,17 @@ test("launches into the Search state without arguments", () => {
 
 test("uses launch arguments as the initial Search query", () => {
   expect(getInitialSearchQuery(["mr", "mime"])).toBe("mr mime");
+});
+
+test("parses debug flag without treating it as Search input", () => {
+  expect(parseCliOptions(["--debug", "mr", "mime"])).toEqual({
+    debug: true,
+    initialQuery: "mr mime",
+  });
+  expect(parseCliOptions(["pikachu"])).toEqual({
+    debug: false,
+    initialQuery: "pikachu",
+  });
 });
 
 test("exact launch arguments open Detail", () => {
