@@ -169,11 +169,13 @@ export function pokespriteRenderedSpriteQueryOptions(
       renderOptions,
     ),
     queryFn: async (): Promise<RenderedSprite> => {
-      const metadata = await queryClient.fetchQuery(
-        pokespriteMetadataQueryOptions(),
-      );
       const asset = await cachePokeSpriteAsset(
-        resolvePokemonFormPokeSpriteAsset(metadata, species, form, shiny),
+        await resolvePokemonFormPokeSpriteAssetForQuery(
+          queryClient,
+          species,
+          form,
+          shiny,
+        ),
       );
 
       return renderPngSpriteFile(asset.filePath, renderOptions);
@@ -213,15 +215,38 @@ export function pokespriteCachedAssetQueryOptions(
   return queryOptions({
     queryKey: pokespriteCachedAssetQueryKey(species, shiny, form),
     queryFn: async (): Promise<CachedPokeSpriteAsset> => {
-      const metadata = await queryClient.fetchQuery(
-        pokespriteMetadataQueryOptions(),
-      );
       return cachePokeSpriteAsset(
-        resolvePokemonFormPokeSpriteAsset(metadata, species, form, shiny),
+        await resolvePokemonFormPokeSpriteAssetForQuery(
+          queryClient,
+          species,
+          form,
+          shiny,
+        ),
       );
     },
     ...queryCachePolicies.pokespriteMetadata,
   });
+}
+
+async function resolvePokemonFormPokeSpriteAssetForQuery(
+  queryClient: ResourceQueryClient,
+  species: SpeciesIndexEntry,
+  form?: PokemonForm,
+  shiny = false,
+): Promise<PokeSpriteAssetReference> {
+  if (pokeSpriteSourceForSpecies(species) === "scarlet-violet") {
+    return resolveScarletVioletSpriteAsset(
+      undefined,
+      species,
+      formKey(form),
+      shiny,
+    );
+  }
+
+  const metadata = await queryClient.fetchQuery(
+    pokespriteMetadataQueryOptions(),
+  );
+  return resolvePokemonFormPokeSpriteAsset(metadata, species, form, shiny);
 }
 
 export function pokespriteRenderedSpritePlaceholderData(
@@ -263,12 +288,11 @@ export function resolvePokemonFormPokeSpriteAsset(
   form?: PokemonForm,
   shiny = false,
 ): PokeSpriteAssetReference {
-  return resolvePokeSpriteAsset(
-    metadata,
-    species,
-    form?.spriteFormKey ?? "$",
-    shiny,
-  );
+  return resolvePokeSpriteAsset(metadata, species, formKey(form), shiny);
+}
+
+function formKey(form: PokemonForm | undefined): string {
+  return form?.spriteFormKey ?? "$";
 }
 
 export function resolvePokeSpriteAsset(

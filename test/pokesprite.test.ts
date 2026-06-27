@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { QueryClient } from "@tanstack/react-query";
 import { HttpResponse, http } from "msw";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -7,6 +8,7 @@ import {
   cachePokeSpriteAsset,
   parsePokeSpriteMetadata,
   PokeSpriteResourceError,
+  pokespriteCachedAssetQueryOptions,
   pokespriteCachedAssetQueryKey,
   pokespriteMetadataQueryKey,
   pokespriteMetadataQueryOptions,
@@ -176,6 +178,44 @@ test("resolves Scarlet and Violet fallback sprite URLs for Gen 9", () => {
     source: "scarlet-violet",
     url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/squawkabilly-green-plumage.png",
   });
+});
+
+test("loads Scarlet and Violet cached assets without PokeSprite metadata", async () => {
+  const sprigatito =
+    findExactSpecies("sprigatito") ?? throwMissingSpecies("sprigatito");
+  const pngBytes = new Uint8Array([137, 80, 78, 71]);
+  let metadataRequests = 0;
+  const queryClient: Pick<QueryClient, "fetchQuery"> = {
+    fetchQuery: async () => {
+      metadataRequests += 1;
+      throw new Error("Unexpected PokeSprite metadata request");
+    },
+  };
+
+  server.use(
+    http.get(
+      "https://raw.githubusercontent.com/msikma/pokesprite/master/data/pokemon.json",
+      () => {
+        metadataRequests += 1;
+        return HttpResponse.json(pokespritePokemonMetadata);
+      },
+    ),
+    http.get(
+      "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/sprigatito.png",
+      () => new HttpResponse(pngBytes),
+    ),
+  );
+
+  const asset = await executeQuery(
+    pokespriteCachedAssetQueryOptions(sprigatito, queryClient),
+  );
+
+  expect(asset).toMatchObject({
+    slug: "sprigatito",
+    source: "scarlet-violet",
+    url: "https://raw.githubusercontent.com/fbosch/pokemon-sprites/main/pokemon/regular/sprigatito.png",
+  });
+  expect(metadataRequests).toBe(0);
 });
 
 test("keys rendered Sprite cache by dex number and shiny state", () => {
