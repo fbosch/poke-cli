@@ -1,7 +1,7 @@
 import type { TerminalCapabilities } from "@opentui/core";
 import { useRenderer } from "@opentui/react";
 import { useEffect, useState } from "react";
-import { detectTerminalImageSupport } from "../terminal-images";
+import { detectTerminalImageSupport } from "#src/terminal-images.ts";
 
 export function useTerminalImageSupport() {
   const renderer = useRenderer();

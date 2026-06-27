@@ -2,20 +2,20 @@ import { RGBA, type BoxRenderable } from "@opentui/core";
 import { useRenderer } from "@opentui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import type { PokemonForm } from "../../pokemon-detail";
+import type { PokemonForm } from "#src/pokemon-detail.ts";
 import {
   pokespriteCachedAssetQueryOptions,
   pokespriteRenderedSpriteQueryOptions,
-} from "../../pokesprite";
-import type { SpeciesIndexEntry } from "../../search";
-import type { RenderedSprite, SpriteCell } from "../../sprite-rendering";
+} from "#src/pokesprite.ts";
+import type { SpeciesIndexEntry } from "#src/search/index.ts";
+import type { RenderedSprite, SpriteCell } from "#src/sprite-rendering.ts";
 import {
   deleteTerminalImageSequence,
   prepareTerminalSpriteImage,
   type PreparedTerminalImage,
   terminalImagePlacementSequence,
   type TerminalImageSupport,
-} from "../../terminal-images";
+} from "#src/terminal-images.ts";
 import { colors, textStyles } from "../design-tokens";
 import { useTerminalImageSupport } from "../useTerminalImageSupport";
 

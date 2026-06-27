@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { runtimeQueryCachePolicies } from "../query-cache";
+import { runtimeQueryCachePolicies } from "#src/query-cache.ts";
 const pokeApiBaseUrl = "https://pokeapi.co/api/v2/";
 
 export type PokeApiResourceQueryKey = readonly [

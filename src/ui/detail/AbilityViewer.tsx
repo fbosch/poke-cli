@@ -1,6 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { PokemonAbilityDetail, PokemonDetail } from "../../pokemon-detail";
-import { pokemonAbilityDetailsQueryOptions } from "../../pokemon-detail";
+import type {
+  PokemonAbilityDetail,
+  PokemonDetail,
+} from "#src/pokemon-detail.ts";
+import { pokemonAbilityDetailsQueryOptions } from "#src/pokemon-detail.ts";
 import { KeyHints, Modal, keyHintsWidth } from "../components";
 import { colors, textStyles } from "../design-tokens";
 

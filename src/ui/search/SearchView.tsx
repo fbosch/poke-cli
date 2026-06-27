@@ -1,4 +1,4 @@
-import { minimumSearchQueryLength, searchResults } from "../../search";
+import { minimumSearchQueryLength, searchResults } from "#src/search/index.ts";
 import { InstructionFooter, KeyHints, PokedexHeader } from "../components";
 import { colors, textStyles } from "../design-tokens";
 

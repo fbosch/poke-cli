@@ -1,4 +1,4 @@
-import type { PokemonDetail } from "../../pokemon-detail";
+import type { PokemonDetail } from "#src/pokemon-detail.ts";
 import { colors, textStyles } from "../design-tokens";
 
 export function FlavorTextPanel({

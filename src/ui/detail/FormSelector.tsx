@@ -1,4 +1,4 @@
-import type { PokemonForm } from "../../pokemon-detail";
+import type { PokemonForm } from "#src/pokemon-detail.ts";
 import { KeyHints, Modal, keyHintsWidth } from "../components";
 import { colors } from "../design-tokens";
 

@@ -1,7 +1,10 @@
 import { useState, type ReactNode } from "react";
-import type { DetailNavigationDelta } from "../../app-state";
-import type { PokemonDetail } from "../../pokemon-detail";
-import { getSpeciesByDexDelta, type SpeciesIndexEntry } from "../../search";
+import type { DetailNavigationDelta } from "#src/app-state.ts";
+import type { PokemonDetail } from "#src/pokemon-detail.ts";
+import {
+  getSpeciesByDexDelta,
+  type SpeciesIndexEntry,
+} from "#src/search/index.ts";
 import {
   DetailCardTitle,
   DetailScreen,

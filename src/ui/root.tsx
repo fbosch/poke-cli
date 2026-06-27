@@ -5,8 +5,8 @@ import {
   createQueryPersister,
   persistedQueryMaxAge,
   queryCacheBuster,
-} from "../query-cache";
-import type { CliImageMode } from "../cli";
+} from "#src/query-cache.ts";
+import type { CliImageMode } from "#src/cli.tsx";
 import { App } from "./app";
 
 const persistQueryCache = Bun.env.NODE_ENV !== "development";

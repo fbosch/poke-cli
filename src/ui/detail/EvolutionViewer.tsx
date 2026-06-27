@@ -1,7 +1,7 @@
 import type {
   PokemonEvolution,
   PokemonEvolutionChain,
-} from "../../pokemon-detail";
+} from "#src/pokemon-detail.ts";
 import { useState } from "react";
 import { KeyHints, Modal, keyHintsWidth } from "../components";
 import { colors, textStyles } from "../design-tokens";

@@ -2,7 +2,7 @@ import type { KeyEvent } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import type { CliImageMode } from "../cli";
+import type { CliImageMode } from "#src/cli.tsx";
 import {
   applyAppKey,
   createInitialAppState,
@@ -14,25 +14,25 @@ import {
   loadDetailSpecies,
   type DetailNavigationDelta,
   type DetailState,
-} from "../app-state";
-import { appendDebugErrorLog } from "../error-log";
-import type { PokemonDetail, PokemonForm } from "../pokemon-detail";
+} from "#src/app-state.ts";
+import { appendDebugErrorLog } from "#src/error-log.ts";
+import type { PokemonDetail, PokemonForm } from "#src/pokemon-detail.ts";
 import {
   pokemonAbilityDetailsQueryOptions,
   pokemonDetailQueryOptions,
   pokemonFormTargetKey,
-} from "../pokemon-detail";
+} from "#src/pokemon-detail.ts";
 import {
   pokespriteCachedAssetQueryOptions,
   pokespriteRenderedSpriteQueryOptions,
-} from "../pokesprite";
-import { prepareTerminalSpriteImage } from "../terminal-images";
+} from "#src/pokesprite.ts";
+import { prepareTerminalSpriteImage } from "#src/terminal-images.ts";
 import { QueryDebugPanel } from "./QueryDebugPanel";
 import {
   findExactSpecies,
   getSpeciesByDexDelta,
   type SpeciesIndexEntry,
-} from "../search";
+} from "#src/search/index.ts";
 import {
   DetailCardTitle,
   DetailScreen,

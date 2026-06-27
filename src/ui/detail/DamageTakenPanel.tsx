@@ -1,4 +1,4 @@
-import type { DamageTaken, DamageTakenEntry } from "../../type-matchups";
+import type { DamageTaken, DamageTakenEntry } from "#src/type-matchups.ts";
 import { TypeTag } from "../components";
 import { colors, textStyles } from "../design-tokens";
 
