@@ -102,6 +102,13 @@ type PokemonAbilityDetailsQueryKey = readonly [
   abilityUrls: readonly string[],
 ];
 
+const formattedResourceNames = new Map<string, string>();
+const normalizedFlavorTexts = new Map<string, string>();
+const pokemonEvolutionChains = new WeakMap<
+  PokeApiEvolutionChain,
+  PokemonEvolutionChain
+>();
+
 export function pokemonDetailQueryKey(
   species: SpeciesIndexEntry,
   form?: PokemonForm,
@@ -307,7 +314,14 @@ export function buildPokemonForms(
 function buildPokemonEvolutionChain(
   evolutionChainResource: PokeApiEvolutionChain,
 ): PokemonEvolutionChain {
-  return { root: buildPokemonEvolution(evolutionChainResource.chain) };
+  const cached = pokemonEvolutionChains.get(evolutionChainResource);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const chain = { root: buildPokemonEvolution(evolutionChainResource.chain) };
+  pokemonEvolutionChains.set(evolutionChainResource, chain);
+  return chain;
 }
 
 function buildPokemonEvolution(
@@ -482,18 +496,32 @@ function buildFlavorTexts(
 }
 
 function normalizeFlavorText(value: string): string {
-  return value
+  const cached = normalizedFlavorTexts.get(value);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const normalized = value
     .replaceAll("\f", " ")
     .replaceAll("\n", " ")
     .replaceAll(/\s+/g, " ")
     .trim();
+  normalizedFlavorTexts.set(value, normalized);
+  return normalized;
 }
 
 function formatResourceName(value: string): string {
-  return value
+  const cached = formattedResourceNames.get(value);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const formatted = value
     .split("-")
     .map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`)
     .join(" ");
+  formattedResourceNames.set(value, formatted);
+  return formatted;
 }
 
 function getPokemonFormDisplayName(
