@@ -122,6 +122,12 @@ const searchCtrlKeyAliases: Record<string, string> = {
   k: "ctrl+k",
   return: "ctrl+j",
 };
+const carryoverEligibleFormKeys = new Set([
+  "alola",
+  "galar",
+  "hisui",
+  "paldea",
+]);
 
 export function createInitialAppState(query = ""): AppState {
   return appStateMachine.initial(query);
@@ -658,13 +664,20 @@ function carryOverDetailForm(
   species: SpeciesIndexEntry,
 ): PokemonFormIntent | undefined {
   const form = state.detail?.form;
-  if (form === undefined) {
+  if (form === undefined || isCarryoverEligiblePokemonForm(form) === false) {
     return undefined;
   }
 
   return isDirectEvolutionSpecies(state, species)
     ? pokemonFormCarryoverIntent(form)
     : undefined;
+}
+
+function isCarryoverEligiblePokemonForm(form: PokemonForm): boolean {
+  return (
+    form.isDefault === false &&
+    carryoverEligibleFormKeys.has(form.spriteFormKey)
+  );
 }
 
 function isDirectEvolutionSpecies(
@@ -728,8 +741,17 @@ export function pokemonFormsMatch(
       ([requestedForm, loadedForm]) =>
         pokemonFormsShareAlternateKey(requestedForm, loadedForm),
     )
-    .with([P._, { isDefault: true }, true], () => true)
+    .with(
+      [P.when(isUnresolvedCarryoverFormIntent), { isDefault: true }, true],
+      () => true,
+    )
     .otherwise(() => false);
+}
+
+function isUnresolvedCarryoverFormIntent(
+  form: PokemonFormIntent | undefined,
+): form is PokemonFormIntent {
+  return form !== undefined && form.pokemonName === undefined;
 }
 
 function pokemonFormsShareAlternateKey(

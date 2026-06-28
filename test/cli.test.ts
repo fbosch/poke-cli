@@ -784,6 +784,26 @@ test("Detail form target matching accepts resolved carryover and default fallbac
   ).toBe(false);
 });
 
+test("Detail exact selected forms do not accept default fallback", () => {
+  expect(
+    pokemonFormsMatch(pikachuLibreForm, ninetalesDefaultForm, {
+      allowDefaultFallback: true,
+    }),
+  ).toBe(false);
+});
+
+test("Detail navigation does not carry cosmetic forms across evolutions", () => {
+  const state = loadedPikachuLibreDetailState();
+  const next = applyAppKey(state, { name: "right" });
+
+  expect(next).toMatchObject({
+    screen: "detail",
+    form: undefined,
+    species: { slug: "raichu" },
+    status: "loading",
+  });
+});
+
 test("Detail dex navigation resets regional form outside evolution chain", () => {
   const state = loadedAlolanNinetalesDetailState();
   const next = applyAppKey(state, { name: "right" });
@@ -878,6 +898,25 @@ function loadedPikachuMultiFormDetailState(): DetailState {
       ...pikachuDetail,
       forms: [...pikachuDetail.forms, pikachuLibreForm],
     },
+  );
+}
+
+function loadedPikachuLibreDetailState(): DetailState {
+  const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
+  const loading = {
+    ...(createInitialAppState("pikachu") as DetailState),
+    form: pikachuLibreForm,
+  };
+
+  return detailLoadSucceeded(
+    loading,
+    pikachu,
+    pokemonDetailWithForms(
+      "Pikachu Libre",
+      [pikachuDetail.form, pikachuLibreForm],
+      pikachuLibreForm,
+      pikachuDetail.evolutionChain,
+    ),
   );
 }
 
@@ -1053,7 +1092,7 @@ function pokemonDetailWithForms(
   name: string,
   forms: PokemonForm[],
   form: PokemonForm,
-  evolutionChain = vulpixEvolutionChain,
+  evolutionChain: PokemonDetail["evolutionChain"] = vulpixEvolutionChain,
 ): PokemonDetail {
   return {
     ...pikachuDetail,
