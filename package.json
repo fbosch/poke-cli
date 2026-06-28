@@ -15,11 +15,10 @@
     "dist"
   ],
   "bin": {
-    "pkdx": "./dist/pkdx"
+    "pkdx": "dist/pkdx"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "dev": "NODE_ENV=development bun run src/cli.tsx",
