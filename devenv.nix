@@ -20,6 +20,6 @@
   enterTest = ''
     bun --version >/dev/null
     zig version >/dev/null
-    bunx fallow --version >/dev/null
+    git --version >/dev/null
   '';
 }

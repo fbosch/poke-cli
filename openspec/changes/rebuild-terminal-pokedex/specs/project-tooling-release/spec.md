@@ -67,7 +67,7 @@ The project SHALL run deterministic Linux CI without live PokeAPI or PokeSprite 
 - **THEN** it builds and smoke-tests the compiled binary artifact
 
 ### Requirement: Release automation
-The project SHALL use release-please to create GitHub Releases with Linux compiled binary artifacts.
+The project SHALL use release-please to publish npm package releases and create GitHub Releases with Linux compiled binary artifacts.
 
 #### Scenario: Release PR updates release metadata
 - **WHEN** Conventional Commit history contains releasable changes
@@ -76,6 +76,10 @@ The project SHALL use release-please to create GitHub Releases with Linux compil
 #### Scenario: GitHub Release includes binary
 - **WHEN** release-please creates a GitHub Release
 - **THEN** the release workflow attaches the Linux compiled binary artifact
+
+#### Scenario: npm package is published through trusted publishing
+- **WHEN** release-please creates a release
+- **THEN** the release workflow publishes the npm package using GitHub Actions OIDC trusted publishing without a long-lived npm token
 
 ### Requirement: Dependency automation
 The project SHALL use grouped Dependabot updates for package and GitHub Actions dependencies.

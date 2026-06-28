@@ -87,5 +87,5 @@
 - [x] 11.2 Add commitlint conventional configuration.
 - [x] 11.3 Add grouped Dependabot configuration for package and GitHub Actions updates.
 - [x] 11.4 Add GitHub Actions CI that runs through `devenv shell`, uses frozen `bun.lock`, runs deterministic checks, verifies generated index freshness, and smoke-tests the Linux compiled binary without live PokeAPI or PokeSprite dependencies.
-- [x] 11.5 Add release-please configuration and release workflow that publishes GitHub Releases with Linux compiled binary artifacts.
+- [x] 11.5 Add release-please configuration and release workflow that publishes npm packages and GitHub Releases with Linux compiled binary artifacts.
 - [x] 11.6 Verify the slice with `bun run ci`, hook dry-runs where supported, workflow validation, and a local release build smoke.

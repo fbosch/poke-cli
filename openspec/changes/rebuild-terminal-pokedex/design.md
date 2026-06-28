@@ -10,7 +10,7 @@ The rebuild is a TUI-first application with a tested non-interactive core. The d
 
 - Build a Terminal Pokédex App with Search and Detail states.
 - Keep implementation slices vertical and verifiable after every task.
-- Use OpenTUI React for the TUI, Bun for runtime/test/build, and a compiled Linux binary as the MVP release artifact.
+- Use OpenTUI React for the TUI, Bun for runtime/test/build, npm for package distribution, and a compiled Linux binary as the MVP release artifact.
 - Use a static generated Pokémon Species index for Fuzzy Search.
 - Fetch and cache PokeAPI Detail data, PokeAPI evolution chains, and PokeSprite resources in the user cache directory.
 - Validate external API data at boundaries with Zod before building internal models.
@@ -19,7 +19,6 @@ The rebuild is a TUI-first application with a tested non-interactive core. The d
 **Non-Goals:**
 
 - Preserve the old Blessed implementation, npm package behavior, `dex` command alias, or current package layout.
-- Publish to npm in the MVP.
 - Support non-interactive text or JSON output in the MVP.
 - Make Search return individual Pokémon Forms; Search remains Pokémon Species oriented.
 - Run live PokeAPI or PokeSprite network checks in normal CI.
@@ -64,7 +63,7 @@ Species navigation remains National Dex based. Form Carryover applies only when 
 
 ### Tooling And Release
 
-`devenv.sh` with Nix provides Bun, Zig, Fallow, and support tools. `package.json` scripts remain the canonical project commands. Biome handles formatting/linting, TypeScript handles type checking, Bun test handles tests, Fallow provides deterministic codebase intelligence, Worktrunk manages the project worktree workflow through checked-in `.config/wt.toml` and is expected on the host PATH, Lefthook runs local Git hooks, commitlint enforces Conventional Commits, Dependabot groups dependency updates, and release-please creates GitHub Releases with Linux binary artifacts.
+`devenv.sh` with Nix provides Bun, Zig, Fallow, and support tools. `package.json` scripts remain the canonical project commands. Biome handles formatting/linting, TypeScript handles type checking, Bun test handles tests, Fallow provides deterministic codebase intelligence, Worktrunk manages the project worktree workflow through checked-in `.config/wt.toml` and is expected on the host PATH, Lefthook runs local Git hooks, commitlint enforces Conventional Commits, Dependabot groups dependency updates, and release-please creates GitHub Releases, publishes the package to npm through Trusted Publishing, and uploads Linux binary artifacts.
 
 CI runs through `devenv shell` with frozen `bun.lock`, deterministic tests, generated-index freshness checks, and compiled-binary smoke checks. Normal CI does not depend on live external network services.
 
