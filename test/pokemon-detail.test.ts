@@ -3,13 +3,12 @@ import { HttpResponse, http } from "msw";
 import {
   buildPokemonForms,
   buildPokemonAbilityDetail,
-  buildDefaultPokemonDetail,
   buildPokemonDetail,
   pokemonAbilityDetailsQueryOptions,
   pokemonDetailQueryKey,
   pokemonDetailQueryOptions,
 } from "../src/pokemon-detail";
-import type { PokemonDetail } from "../src/pokemon-detail";
+import type { PokemonDetail, PokemonFormIntent } from "../src/pokemon-detail";
 import type { PokeApiEvolutionChain } from "../src/pokeapi/schema";
 import {
   createAppQueryClient,
@@ -61,12 +60,12 @@ const ninetalesIndexEntry: SpeciesIndexEntry = {
   name: "Ninetales",
   slug: "ninetales",
 };
-const carriedVulpixAlolaForm = {
-  displayName: "Vulpix Alola",
-  isDefault: false,
-  pokemonName: "vulpix-alola",
-  pokemonUrl: "https://pokeapi.co/api/v2/pokemon/vulpix-alola/",
+const carriedVulpixAlolaFormIntent: PokemonFormIntent = {
   spriteFormKey: "alola",
+};
+const pikachuRockStarFormIntent: PokemonFormIntent = {
+  pokemonName: "pikachu-rock-star",
+  spriteFormKey: "rock-star",
 };
 const vulpixEvolutionChainWithForms: PokeApiEvolutionChain = {
   chain: {
@@ -126,12 +125,7 @@ test("builds Default Representative PokemonDetail from validated PokeAPI resourc
     throw new Error("Missing Pikachu default form fixture");
   }
 
-  const detail = buildDefaultPokemonDetail(
-    pikachuIndexEntry,
-    pikachuSpecies,
-    pikachuPokemon,
-    pikachuEvolutionChain,
-  );
+  const detail = buildPikachuDetailFixture();
 
   expect(detail).toEqual({
     abilities: [
@@ -413,15 +407,8 @@ test("falls back to default form when carried evolution form is unavailable", as
 });
 
 test("does not carry unrelated alternate form keys to another species", async () => {
-  const forms = buildPokemonForms(charizardIndexEntry, charizardSpecies);
-  const megaX = forms.find((form) => form.pokemonName === "charizard-mega-x");
-
-  if (megaX === undefined) {
-    throw new Error("Missing Charizard Mega X form fixture");
-  }
-
   setupRaichuDetailResources();
-  const detail = (await executeQuery(
+  const detail = await executeQuery<PokemonDetail>(
     pokemonDetailQueryOptions(
       {
         aliases: ["026", "26"],
@@ -431,9 +418,9 @@ test("does not carry unrelated alternate form keys to another species", async ()
         slug: "raichu",
       },
       createResourceQueryClient(),
-      megaX,
+      { spriteFormKey: "mega-x" },
     ),
-  )) as PokemonDetail;
+  );
 
   expect(detail.form).toMatchObject({
     isDefault: true,
@@ -555,19 +542,10 @@ test("loads form-specific PokemonDetail through mocked PokeAPI queries", async (
     }),
   );
   const queryClient = createResourceQueryClient();
-  const rockStarForm = buildPokemonForms(
-    pikachuIndexEntry,
-    pikachuSpecies,
-  ).find((form) => form.pokemonName === "pikachu-rock-star");
-
-  if (rockStarForm === undefined) {
-    throw new Error("Missing Pikachu Rock Star form fixture");
-  }
-
   const options = pokemonDetailQueryOptions(
     pikachuIndexEntry,
     queryClient,
-    rockStarForm,
+    pikachuRockStarFormIntent,
   );
 
   await expect(executeQuery(options)).resolves.toMatchObject({
@@ -578,11 +556,9 @@ test("loads form-specific PokemonDetail through mocked PokeAPI queries", async (
     name: "Pikachu Rock Star",
     types: ["Electric"],
   });
-  expect(pokemonDetailQueryKey(pikachuIndexEntry, rockStarForm)).toEqual([
-    "pokemon-detail",
-    "pikachu",
-    "pikachu-rock-star",
-  ]);
+  expect(
+    pokemonDetailQueryKey(pikachuIndexEntry, pikachuRockStarFormIntent),
+  ).toEqual(["pokemon-detail", "pikachu", "pikachu-rock-star"]);
 });
 
 test("builds form-specific PokemonDetail mapping", () => {
@@ -690,12 +666,7 @@ test("uses form-specific evolution details when PokeAPI provides them", () => {
 
 test("loads cached PokemonDetail without network access", async () => {
   const queryClient = createAppQueryClient();
-  const cachedDetail = buildDefaultPokemonDetail(
-    pikachuIndexEntry,
-    pikachuSpecies,
-    pikachuPokemon,
-    pikachuEvolutionChain,
-  );
+  const cachedDetail = buildPikachuDetailFixture();
   queryClient.setQueryDefaults(pokemonDetailQueryKey(pikachuIndexEntry), {
     gcTime: Infinity,
   });
@@ -727,6 +698,24 @@ function createResourceQueryClient() {
       return executeQuery<TData>(resourceOptions);
     },
   };
+}
+
+function buildPikachuDetailFixture(): PokemonDetail {
+  const forms = buildPokemonForms(pikachuIndexEntry, pikachuSpecies);
+  const defaultForm = forms[0];
+
+  if (defaultForm === undefined) {
+    throw new Error("Missing Pikachu default form fixture");
+  }
+
+  return buildPokemonDetail(
+    pikachuIndexEntry,
+    pikachuSpecies,
+    pikachuPokemon,
+    pikachuEvolutionChain,
+    forms,
+    defaultForm,
+  );
 }
 
 function setupNinetalesDetailResources({
@@ -882,17 +871,17 @@ function setupRaichuDetailResources() {
 }
 
 async function loadNinetalesWithCarriedAlolaForm(): Promise<PokemonDetail> {
-  return (await executeQuery(
+  return await executeQuery<PokemonDetail>(
     pokemonDetailQueryOptions(
       ninetalesIndexEntry,
       createResourceQueryClient(),
-      carriedVulpixAlolaForm,
+      carriedVulpixAlolaFormIntent,
     ),
-  )) as PokemonDetail;
+  );
 }
 
 async function loadDefaultNinetales(): Promise<PokemonDetail> {
-  return (await executeQuery(
+  return await executeQuery<PokemonDetail>(
     pokemonDetailQueryOptions(ninetalesIndexEntry, createResourceQueryClient()),
-  )) as PokemonDetail;
+  );
 }

@@ -258,23 +258,6 @@ function getAbilityResourceUrl(ability: PokemonAbility): string {
   return ability.url ?? `ability/${slugifyResourceName(ability.name)}`;
 }
 
-export function buildDefaultPokemonDetail(
-  species: SpeciesIndexEntry,
-  speciesResource: PokeApiPokemonSpecies,
-  pokemonResource: PokeApiPokemon,
-  evolutionChainResource: PokeApiEvolutionChain,
-): PokemonDetail {
-  const forms = buildPokemonForms(species, speciesResource);
-  return buildPokemonDetail(
-    species,
-    speciesResource,
-    pokemonResource,
-    evolutionChainResource,
-    forms,
-    getSelectedPokemonForm(forms, species.slug),
-  );
-}
-
 export function buildPokemonDetail(
   species: SpeciesIndexEntry,
   speciesResource: PokeApiPokemonSpecies,

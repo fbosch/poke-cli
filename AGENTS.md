@@ -19,6 +19,12 @@ Terminal Pokédex App rebuild workspace for the `pkdx` executable.
 - Do not manually edit `src/pokeapi/generated.ts`; regenerate it with `bun run generate:pokeapi-types`.
 - If search source data or alias overrides change, regenerate `src/search/species-index.json` with `bun run generate:index`.
 
+## TypeScript Branching
+
+- Use `ts-pattern` for closed domain decision tables, especially state/event transitions and Pokémon Form Intent or Form Carryover matching.
+- Prefer `.exhaustive()` for closed unions; use `.otherwise()` only when fallback behavior is part of the domain.
+- Do not replace lookup tables, simple guards, hot loops, or Search ranking logic with `ts-pattern`.
+
 ## Tooling
 
 - Use Bun scripts from `package.json` for project validation; `bun run check` is the main local quality gate.

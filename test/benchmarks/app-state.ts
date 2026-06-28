@@ -5,7 +5,10 @@ import {
   loadDetailSpecies,
   type DetailState,
 } from "../../src/app-state";
-import { buildDefaultPokemonDetail } from "../../src/pokemon-detail";
+import {
+  buildPokemonDetail,
+  buildPokemonForms,
+} from "../../src/pokemon-detail";
 import { findExactSpecies } from "../../src/search";
 import { benchmarkResult } from "../support/benchmark";
 import {
@@ -17,11 +20,16 @@ import {
 const iterations = Number(Bun.env.PKDX_BENCH_ITERATIONS ?? 500_000);
 const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
 const raichu = findExactSpecies("raichu") ?? throwMissingSpecies("raichu");
-const detail = buildDefaultPokemonDetail(
+const pikachuForms = buildPokemonForms(pikachu, pikachuSpecies);
+const pikachuDefault =
+  pikachuForms.find((form) => form.isDefault) ?? throwMissingForm("pikachu");
+const detail = buildPokemonDetail(
   pikachu,
   pikachuSpecies,
   pikachuPokemon,
   pikachuEvolutionChain,
+  pikachuForms,
+  pikachuDefault,
 );
 const loadedPikachu = detailLoadSucceeded(
   createInitialAppState("pikachu") as DetailState,
@@ -77,4 +85,8 @@ console.table(results);
 
 function throwMissingSpecies(slug: string): never {
   throw new Error(`Missing benchmark species: ${slug}`);
+}
+
+function throwMissingForm(name: string): never {
+  throw new Error(`Missing benchmark form: ${name}`);
 }

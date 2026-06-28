@@ -1,5 +1,4 @@
 import {
-  buildDefaultPokemonDetail,
   buildPokemonDetail,
   buildPokemonForms,
 } from "../../src/pokemon-detail";
@@ -17,6 +16,9 @@ const iterations = Number(Bun.env.PKDX_BENCH_ITERATIONS ?? 100_000);
 const pikachu = findExactSpecies("pikachu") ?? throwMissingSpecies("pikachu");
 const charizard =
   findExactSpecies("charizard") ?? throwMissingSpecies("charizard");
+const pikachuForms = buildPokemonForms(pikachu, pikachuSpecies);
+const pikachuDefault =
+  pikachuForms.find((form) => form.isDefault) ?? throwMissingForm("pikachu");
 const charizardForms = buildPokemonForms(charizard, charizardSpecies);
 const charizardMegaX =
   charizardForms.find((form) => form.pokemonName === "charizard-mega-x") ??
@@ -34,11 +36,13 @@ const benchmarks = [
   {
     name: "build-default-detail-pikachu",
     run: () =>
-      buildDefaultPokemonDetail(
+      buildPokemonDetail(
         pikachu,
         pikachuSpecies,
         pikachuPokemon,
         pikachuEvolutionChain,
+        pikachuForms,
+        pikachuDefault,
       ).stats.length,
   },
   {

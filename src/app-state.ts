@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import {
   findExactSpecies,
   getSpeciesByDexDelta,
@@ -163,34 +164,26 @@ const searchStateNode: SearchStateNode = {
 };
 
 const detailStateNode: DetailStateNode = {
-  transition: (state, event) => {
-    if (event.type === "detail.loadSpecies") {
-      return loadDetailSpeciesState(state, event.species);
-    }
-
-    if (event.type === "detail.loadSucceeded") {
-      return detailLoadSucceededState(state, event.species, event.detail);
-    }
-
-    if (event.type === "detail.loadFailed") {
-      return detailLoadFailedState(
-        state,
-        event.species,
-        event.error,
-        event.form,
-      );
-    }
-
-    if (event.type === "detail.abilitiesLoaded") {
-      return openLoadedAbilityOverlay(state);
-    }
-
-    if (event.type === "detail.abilitiesLoadFailed") {
-      return closeDetailOverlay(state);
-    }
-
-    return applyDetailKey(state, event.key);
-  },
+  transition: (state, event) =>
+    match(event)
+      .returnType<DetailState | AppState>()
+      .with({ type: "detail.loadSpecies" }, ({ species }) =>
+        loadDetailSpeciesState(state, species),
+      )
+      .with({ type: "detail.loadSucceeded" }, ({ detail, species }) =>
+        detailLoadSucceededState(state, species, detail),
+      )
+      .with({ type: "detail.loadFailed" }, ({ error, form, species }) =>
+        detailLoadFailedState(state, species, error, form),
+      )
+      .with({ type: "detail.abilitiesLoaded" }, () =>
+        openLoadedAbilityOverlay(state),
+      )
+      .with({ type: "detail.abilitiesLoadFailed" }, () =>
+        closeDetailOverlay(state),
+      )
+      .with({ type: "key" }, ({ key }) => applyDetailKey(state, key))
+      .exhaustive(),
 };
 
 function createInitialState(query = ""): AppState {
@@ -715,19 +708,24 @@ function pokemonFormsMatch(
   loaded: PokemonForm | PokemonFormIntent | undefined,
   { allowDefaultFallback }: { allowDefaultFallback: boolean },
 ): boolean {
-  if (pokemonFormTargetKey(requested) === pokemonFormTargetKey(loaded)) {
-    return true;
-  }
-
-  if (requested === undefined || loaded === undefined) {
-    return false;
-  }
-
-  if (pokemonFormsShareAlternateKey(requested, loaded)) {
-    return true;
-  }
-
-  return allowDefaultFallback && "isDefault" in loaded && loaded.isDefault;
+  return match([requested, loaded, allowDefaultFallback])
+    .returnType<boolean>()
+    .with(
+      [P._, P._, P._],
+      ([requestedForm, loadedForm]) =>
+        pokemonFormTargetKey(requestedForm) ===
+        pokemonFormTargetKey(loadedForm),
+      () => true,
+    )
+    .with([P.nullish, P._, P._], () => false)
+    .with([P._, P.nullish, P._], () => false)
+    .with(
+      [P.nonNullable, { isDefault: false }, P._],
+      ([requestedForm, loadedForm]) =>
+        pokemonFormsShareAlternateKey(requestedForm, loadedForm),
+    )
+    .with([P._, { isDefault: true }, true], () => true)
+    .otherwise(() => false);
 }
 
 function pokemonFormsShareAlternateKey(
