@@ -10,12 +10,6 @@
 
 A terminal Pokédex with fuzzy search, form selection, sprites, stats, abilities, evolutions, flavor text, and damage matchups.
 
-## Screenshot
-
-<p align="center">
-  <img src="docs/example.png" alt="pkdx showing Politoed details">
-</p>
-
 ## Requirements
 
 - macOS, Linux, WSL, Git Bash, or Windows PowerShell/CMD
@@ -42,6 +36,12 @@ or start with an initial query:
 ```bash
 pkdx pikachu
 ```
+
+## Screenshot
+
+<p align="center">
+  <img src="docs/example.png" alt="pkdx showing Politoed details">
+</p>
 
 ## Credits
 
