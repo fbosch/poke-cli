@@ -30,8 +30,8 @@
   "scripts": {
     "dev": "NODE_ENV=development bun run src/cli.tsx",
     "start": "bun run build && ./dist/pkdx",
-    "build": "bun build --compile --outfile=dist/pkdx src/cli.tsx",
-    "analyze:bundle": "bun build --target=bun --outdir=dist/analyze --metafile=dist/analyze/metafile.json --metafile-md=dist/analyze/metafile.md src/cli.tsx --external='@opentui/core-*'",
+    "build": "DEV=false bun build --compile --env='DEV*' --outfile=dist/pkdx src/cli.tsx",
+    "analyze:bundle": "DEV=false bun build --target=bun --production --env='DEV*' --outdir=dist/analyze --metafile=dist/analyze/metafile.json --metafile-md=dist/analyze/metafile.md src/cli.tsx --external='@opentui/core-*'",
     "test": "bun test",
     "test:related": "bun run scripts/test-related.ts",
     "coverage:badge": "bun run scripts/generate-coverage-badge.ts",

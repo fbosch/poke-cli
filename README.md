@@ -1,7 +1,6 @@
 # pkdx
 
 [![npm](https://img.shields.io/npm/v/%40fbb.sh%2Fpkdx?logo=npm)](https://www.npmjs.com/package/@fbb.sh/pkdx)
-[![size](https://img.shields.io/npm/unpacked-size/%40fbb.sh%2Fpkdx?logo=npm&label=size)](https://www.npmjs.com/package/@fbb.sh/pkdx)
 [![license](https://img.shields.io/npm/l/%40fbb.sh%2Fpkdx)](LICENSE)
 [![coverage](docs/coverage.svg)](docs/coverage.svg)
 
