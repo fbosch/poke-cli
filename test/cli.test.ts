@@ -9,6 +9,7 @@ import {
   detailLoadFailed,
   detailLoadSucceeded,
   loadDetailSpecies,
+  pokemonFormsMatch,
   type DetailState,
 } from "../src/app-state";
 import {
@@ -761,6 +762,24 @@ test("Detail evolution selection accepts default when carried form is unavailabl
     },
     status: "ready",
   });
+});
+
+test("Detail form target matching accepts resolved carryover and default fallback", () => {
+  expect(
+    pokemonFormsMatch({ spriteFormKey: "alola" }, alolanNinetalesForm, {
+      allowDefaultFallback: true,
+    }),
+  ).toBe(true);
+  expect(
+    pokemonFormsMatch({ spriteFormKey: "alola" }, ninetalesDefaultForm, {
+      allowDefaultFallback: true,
+    }),
+  ).toBe(true);
+  expect(
+    pokemonFormsMatch({ spriteFormKey: "alola" }, ninetalesDefaultForm, {
+      allowDefaultFallback: false,
+    }),
+  ).toBe(false);
 });
 
 test("Detail dex navigation resets regional form outside evolution chain", () => {

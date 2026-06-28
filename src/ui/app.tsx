@@ -12,6 +12,7 @@ import {
   detailLoadSucceeded,
   loadAdjacentDetailSpecies,
   loadDetailSpecies,
+  pokemonFormsMatch,
   type DetailNavigationDelta,
   type DetailState,
 } from "#src/app-state.ts";
@@ -537,7 +538,7 @@ function detailTargetsMatch(
 ): boolean {
   return (
     target.species.slug === species.slug &&
-    pokemonFormTargetKey(target.form) === pokemonFormTargetKey(form)
+    pokemonFormsMatch(target.form, form, { allowDefaultFallback: true })
   );
 }
 
@@ -548,14 +549,13 @@ function resolveDetailTargetPokemonForm(
   if (
     state.detail === undefined ||
     state.detail.species.slug !== target.species.slug ||
-    target.form === undefined
+    detailTargetsMatch(target, state.detail.species, state.detail.form) ===
+      false
   ) {
     return undefined;
   }
 
-  return state.detail.detail.forms.find(
-    (form) => pokemonFormTargetKey(form) === pokemonFormTargetKey(target.form),
-  );
+  return state.detail.form;
 }
 
 function detailErrorBoundaryResetKey(state: DetailState): string {

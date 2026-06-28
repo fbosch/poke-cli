@@ -703,7 +703,7 @@ function evolutionChainIncludesDirectRelationship(
   );
 }
 
-function pokemonFormsMatch(
+export function pokemonFormsMatch(
   requested: PokemonFormIntent | undefined,
   loaded: PokemonForm | PokemonFormIntent | undefined,
   { allowDefaultFallback }: { allowDefaultFallback: boolean },
