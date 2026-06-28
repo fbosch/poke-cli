@@ -66,6 +66,12 @@ export type PokemonEvolution = {
   url?: string;
 };
 
+export function hasPokemonEvolutionChain(
+  evolutionChain: PokemonEvolutionChain,
+): boolean {
+  return evolutionChain.root.evolvesTo.length > 0;
+}
+
 export type PokemonEvYield = {
   effort: number;
   name: string;

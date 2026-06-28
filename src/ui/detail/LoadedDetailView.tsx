@@ -1,6 +1,9 @@
 import { useState, type ReactNode } from "react";
 import type { DetailNavigationDelta } from "#src/app-state.ts";
-import type { PokemonDetail } from "#src/pokemon-detail.ts";
+import {
+  hasPokemonEvolutionChain,
+  type PokemonDetail,
+} from "#src/pokemon-detail.ts";
 import {
   getSpeciesByDexDelta,
   type SpeciesIndexEntry,
@@ -229,6 +232,7 @@ export function LoadedDetailView({
       )}
       <LoadedDetailFooter
         hasAlternateForms={detail.forms.length > 1}
+        hasEvolutionChain={hasPokemonEvolutionChain(detail.evolutionChain)}
         shiny={shiny}
       />
     </DetailScreen>
@@ -418,11 +422,13 @@ function DetailOverlays({
   );
 }
 
-function LoadedDetailFooter({
+export function LoadedDetailFooter({
   hasAlternateForms,
+  hasEvolutionChain,
   shiny,
 }: {
   hasAlternateForms: boolean;
+  hasEvolutionChain: boolean;
   shiny: boolean;
 }) {
   return (
@@ -431,7 +437,7 @@ function LoadedDetailFooter({
         hints={[
           { key: "h/l", action: "prev/next" },
           { key: "a", action: "abilities" },
-          { key: "e", action: "evolution" },
+          ...(hasEvolutionChain ? [{ key: "e", action: "evolution" }] : []),
           ...(hasAlternateForms ? [{ key: "f", action: "forms" }] : []),
           { key: "d/D", action: "desc" },
           { key: "o", action: "web" },

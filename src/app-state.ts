@@ -13,6 +13,7 @@ import type {
   PokemonFormIntent,
 } from "./pokemon-detail";
 import {
+  hasPokemonEvolutionChain,
   pokemonFormCarryoverIntent,
   pokemonFormIntent,
   pokemonFormTargetKey,
@@ -295,7 +296,11 @@ function getDetailOverlayAction(
     return "abilities-loading";
   }
 
-  if (key.name === "e" && state.detail !== undefined) {
+  if (
+    key.name === "e" &&
+    state.detail !== undefined &&
+    hasPokemonEvolutionChain(state.detail.detail.evolutionChain)
+  ) {
     return "evolutions";
   }
 

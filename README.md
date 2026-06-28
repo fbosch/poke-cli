@@ -8,12 +8,12 @@
   </p>
 </div>
 
-`pkdx` is a terminal Pokédex for quickly looking up Pokémon species without leaving the command line.
+A terminal Pokédex with fuzzy search, form selection, sprites, stats, abilities, evolutions, flavor text, and damage matchups.
 
-It supports fuzzy species search, form selection, shiny sprites, damage matchups, abilities, evolutions, and flavor text.
+## Screenshot
 
 <p align="center">
-  <img src="docs/pkdx-politoed.svg" alt="pkdx showing Politoed details">
+  <img src="docs/example.png" alt="pkdx showing Politoed details">
 </p>
 
 ## Requirements
