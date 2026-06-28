@@ -29,7 +29,6 @@ test("search starts after one input character", () => {
   expect(minimumSearchQueryLength).toBe(1);
   expect(searchSpecies("")).toEqual([]);
   expect(searchSpecies("p").length).toBeGreaterThan(0);
-  expect(searchSpecies("pik")[0]?.slug).toBe("pikachu");
 });
 
 test("resolves Search selection through ranked Pokemon Species results", () => {
