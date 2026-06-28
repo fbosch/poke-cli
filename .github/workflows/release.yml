@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Checkout
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: actions/checkout@v5
+
+      - name: Install Nix
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: cachix/install-nix-action@v31
+
+      - name: Configure devenv cache
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+
+      - name: Install devenv
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: nix profile add nixpkgs#devenv
+
+      - name: Install dependencies
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: devenv shell bash -- -e {0}
+        run: bun install --frozen-lockfile
+
+      - name: Build release binary
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: devenv shell bash -- -e {0}
+        run: bun run build
+
+      - name: Smoke-test release binary
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: devenv shell bash -- -e {0}
+        run: bun run smoke:binary
+
+      - name: Package Linux binary artifact
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: |
+          cp dist/pkdx dist/pkdx-linux-x64
+          chmod +x dist/pkdx-linux-x64
+
+      - name: Upload Linux binary to GitHub Release
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ steps.release.outputs.tag_name }}" dist/pkdx-linux-x64 --clobber

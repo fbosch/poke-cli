@@ -75,17 +75,17 @@
 
 ## 10. Form Carryover
 
-- [ ] 10.1 Add cached PokeAPI evolution-chain loading for species involved in Detail navigation.
-- [ ] 10.2 Compute direct evolution relationships from evolution-chain resources without using Dex adjacency as the relationship source.
-- [ ] 10.3 Apply Form Carryover during National Dex `h/l` navigation only for matching regional or form-family variants across direct evolution relationships.
-- [ ] 10.4 Reset to the target species Default Representative for non-matching, cosmetic, gender, temporary, or battle-only forms.
-- [ ] 10.5 Verify the slice with Galarian and Alolan carryover examples, non-carry examples, and `h/l` app-state tests.
+- [x] 10.1 Add cached PokeAPI evolution-chain loading for species involved in Detail navigation.
+- [x] 10.2 Compute direct evolution relationships from evolution-chain resources without using Dex adjacency as the relationship source.
+- [x] 10.3 Apply Form Carryover during National Dex `h/l` navigation only for matching regional or form-family variants across direct evolution relationships.
+- [x] 10.4 Reset to the target species Default Representative for non-matching, cosmetic, gender, temporary, or battle-only forms.
+- [x] 10.5 Verify the slice with Galarian and Alolan carryover examples, non-carry examples, and `h/l` app-state tests.
 
 ## 11. CI And Release Workflow
 
 - [x] 11.1 Add Lefthook configuration for lint-staged pre-commit format/lint/related-test, pre-push typecheck plus changed-scope Fallow audit, and commit-msg commitlint.
 - [x] 11.2 Add commitlint conventional configuration.
-- [ ] 11.3 Add grouped Dependabot configuration for package and GitHub Actions updates.
+- [x] 11.3 Add grouped Dependabot configuration for package and GitHub Actions updates.
 - [x] 11.4 Add GitHub Actions CI that runs through `devenv shell`, uses frozen `bun.lock`, runs deterministic checks, verifies generated index freshness, and smoke-tests the Linux compiled binary without live PokeAPI or PokeSprite dependencies.
-- [ ] 11.5 Add release-please configuration and release workflow that publishes GitHub Releases with Linux compiled binary artifacts.
-- [ ] 11.6 Verify the slice with `bun run ci`, hook dry-runs where supported, workflow validation, and a local release build smoke.
+- [x] 11.5 Add release-please configuration and release workflow that publishes GitHub Releases with Linux compiled binary artifacts.
+- [x] 11.6 Verify the slice with `bun run ci`, hook dry-runs where supported, workflow validation, and a local release build smoke.
