@@ -346,9 +346,17 @@ test("q remains Search text input", () => {
   });
 });
 
-test("exits cleanly on Ctrl-C", () => {
-  const key = { name: "c", ctrl: true };
+test.each([
+  { name: "c", ctrl: true },
+  { name: "escape" },
+])("exits cleanly on $name", (key) => {
   const next = applyAppKey(createInitialAppState(), key);
+
+  expect(next.shouldExit).toBe(true);
+});
+
+test("Detail exits cleanly on q", () => {
+  const next = applyAppKey(loadedPikachuDetailState(), { name: "q" });
 
   expect(next.shouldExit).toBe(true);
 });
@@ -372,23 +380,17 @@ test("Search opens Detail on Enter", () => {
   });
 });
 
-test("Search preserves selection while opening Detail", () => {
+test("Search stores previous selection while opening Detail", () => {
   const selected = applyAppKey(createInitialAppState("nidoran"), {
     name: "j",
     ctrl: true,
   });
   const detail = applyAppKey(selected, { name: "enter" });
-  const search = applyAppKey(detail, { name: "/" });
 
   expect(detail).toMatchObject({
     screen: "detail",
     previousQuery: "nidoran",
     previousSelectedIndex: 1,
-  });
-  expect(search).toMatchObject({
-    screen: "search",
-    query: "nidoran",
-    selectedIndex: 1,
   });
 });
 
@@ -794,13 +796,13 @@ test("Detail dex navigation resets regional form outside evolution chain", () =>
   });
 });
 
-test("Detail returns to Search on slash", () => {
+test("Detail returns to cleared Search on slash", () => {
   const detail = applyAppKey(createInitialAppState("pika"), { name: "enter" });
   const next = applyAppKey(detail, { name: "/" });
 
   expect(next).toEqual({
     screen: "search",
-    query: "pika",
+    query: "",
     selectedIndex: 0,
     shouldExit: false,
   });

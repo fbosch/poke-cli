@@ -437,7 +437,7 @@ function LoadedDetailFooter({
           { key: "o", action: "web" },
           { key: "s", action: shiny ? "regular" : "shiny" },
           { key: "/", action: "search" },
-          { key: "ctrl-c", action: "exit" },
+          { key: "q/esc", action: "exit" },
         ]}
       />
     </InstructionFooter>

@@ -223,6 +223,10 @@ function shouldExitFromState(state: AppState, key: AppKey): boolean {
     return false;
   }
 
+  if (state.screen === "search" && key.name === "q") {
+    return false;
+  }
+
   return isExitKey(key);
 }
 
@@ -238,8 +242,8 @@ function applyDetailKey(state: DetailState, key: AppKey): AppState {
   if (key.name === "/") {
     return {
       screen: "search",
-      query: state.previousQuery,
-      selectedIndex: state.previousSelectedIndex,
+      query: "",
+      selectedIndex: 0,
       shouldExit: false,
     };
   }
@@ -883,5 +887,9 @@ function wrapIndex(index: number, count: number): number {
 }
 
 function isExitKey(key: AppKey): boolean {
-  return key.name === "c" && key.ctrl === true;
+  return (
+    (key.name === "c" && key.ctrl === true) ||
+    key.name === "escape" ||
+    key.name === "q"
+  );
 }
