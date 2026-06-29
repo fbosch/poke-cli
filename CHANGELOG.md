@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/fbosch/pkdx/compare/pkdx-v0.4.0...pkdx-v0.5.0) (2026-06-29)
+
+
+### Features
+
+* **query:** persist query cache in sqlite ([37b9097](https://github.com/fbosch/pkdx/commit/37b90974759203155ff35fdd16d43f119cb9a0f1))
+* **ui:** prewarm sprites on ready ([cd1d25b](https://github.com/fbosch/pkdx/commit/cd1d25bbf9830ff1ad8950a25c9be7b097bc59ad))
+
+
+### Bug Fixes
+
+* **cli:** let app own ctrl-c ([f4037dd](https://github.com/fbosch/pkdx/commit/f4037dd77f3c58a0b8731515ebd37e51ce388aa8))
+* improve packaging ([1d44ae1](https://github.com/fbosch/pkdx/commit/1d44ae1b6092fd101881807781171015d40f30b9))
+* **sprite:** prewarm terminal sprite images ([f401275](https://github.com/fbosch/pkdx/commit/f401275fed1d55c00f1a199150bbb52b5aceb7ae))
+
 ## [0.4.0](https://github.com/fbosch/pkdx/compare/pkdx-v0.3.0...pkdx-v0.4.0) (2026-06-29)
 
 
