@@ -11,6 +11,7 @@ import type { SpeciesIndexEntry } from "#src/search/index.ts";
 import type { RenderedSprite, SpriteCell } from "#src/sprite-rendering.ts";
 import {
   deleteTerminalImageSequence,
+  getPreparedTerminalSpriteImage,
   prepareTerminalSpriteImage,
   type PreparedTerminalImage,
   terminalImagePlacementSequence,
@@ -21,6 +22,10 @@ import { useTerminalImageSupport } from "../useTerminalImageSupport";
 
 export const detailSpriteCanvasHeight = 20;
 export const detailSpriteCanvasWidth = 40;
+const detailSpriteCanvas = {
+  height: detailSpriteCanvasHeight,
+  width: detailSpriteCanvasWidth,
+};
 const detailSpriteImageId = 4242;
 const detailSpritePlacementId = 1;
 
@@ -90,16 +95,15 @@ export function PokemonSpriteInlineImage({
   support: TerminalImageSupport;
 }) {
   const boxRef = useRef<BoxRenderable>(null);
-  const [image, setImage] = useState<PreparedTerminalImage>();
+  const [image, setImage] = useState<PreparedTerminalImage | undefined>(() =>
+    getPreparedTerminalSpriteImage(filePath, detailSpriteCanvas),
+  );
 
   useEffect(() => {
     let cancelled = false;
-    setImage(undefined);
+    setImage(getPreparedTerminalSpriteImage(filePath, detailSpriteCanvas));
 
-    void prepareTerminalSpriteImage(filePath, {
-      height: detailSpriteCanvasHeight,
-      width: detailSpriteCanvasWidth,
-    })
+    void prepareTerminalSpriteImage(filePath, detailSpriteCanvas)
       .then((preparedImage) => {
         if (cancelled) {
           return;

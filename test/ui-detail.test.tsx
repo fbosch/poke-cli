@@ -1,10 +1,13 @@
 import { expect, test } from "bun:test";
 import { createElement } from "react";
 import { isValidElement } from "react";
+import type { PokemonDetail } from "../src/pokemon-detail";
+import type { SpeciesIndexEntry } from "../src/search";
 import { QueryDebugPanelView } from "../src/ui/QueryDebugPanel";
 import { applyAppKey, createInitialAppState } from "../src/app-state";
 import { DamageTakenPanel } from "../src/ui/detail/DamageTakenPanel";
 import { DetailErrorModal } from "../src/ui/detail/DetailErrorModal";
+import { DetailPanel } from "../src/ui/detail/DetailPanel";
 import {
   detailLoadingPlaceholderDelayMs,
   shouldShowPreviousSearchDuringDetailLoad,
@@ -15,6 +18,11 @@ import {
   buildEvolutionFlowchartLines,
 } from "../src/ui/detail/EvolutionViewer";
 import { FormSelector } from "../src/ui/detail/FormSelector";
+import { FlavorTextPanel } from "../src/ui/detail/FlavorTextPanel";
+import {
+  DexNavigationButtons,
+  LoadedDetailView,
+} from "../src/ui/detail/LoadedDetailView";
 import {
   PokemonSpriteArtwork,
   PokemonSpriteFallback,
@@ -139,6 +147,64 @@ test("renders detail errors in a modal", () => {
   expect(isValidElement(element)).toBe(true);
 });
 
+test("renders basic Detail panel sizing", () => {
+  const element = DetailPanel({
+    children: "content",
+    height: 4,
+    minHeight: 3,
+    width: 20,
+  });
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+
+  expect(isValidElement(element)).toBe(true);
+});
+
+test("renders flavor text source metadata", () => {
+  const element = FlavorTextPanel({
+    detail: pikachuDetail,
+    selectedIndex: 1,
+  });
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+});
+
+test("renders dex navigation button container", () => {
+  const element = DexNavigationButtons({
+    nextSpecies: raichuSpeciesIndexEntry,
+    onNavigate: () => {},
+    previousSpecies: pichuSpeciesIndexEntry,
+  });
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+
+  expect(isValidElement(element)).toBe(true);
+});
+
+test("renders loaded Detail view shell", () => {
+  const element = LoadedDetailView({
+    abilityViewerOpen: false,
+    descriptionIndex: 0,
+    detail: pikachuDetail,
+    errorMessage: undefined,
+    evolutionViewerOpen: false,
+    formSelectorSelectedIndex: undefined,
+    loadedSpecies: pikachuSpeciesIndexEntry,
+    navigationSpecies: pikachuSpeciesIndexEntry,
+    onCloseOverlay: () => {},
+    onNavigate: () => {},
+    onSelectSpecies: () => {},
+    shiny: false,
+    terminalImagesEnabled: false,
+  });
+
+  expect(element).toBeDefined();
+  expect(isValidElement(element)).toBe(true);
+});
+
 test("renders form selector modal", () => {
   const forms = [
     {
@@ -231,3 +297,86 @@ test("links form-specific evolution labels to base species names", () => {
     { name: "Ninetales Alola", targetName: "Ninetales" },
   ]);
 });
+
+const pichuSpeciesIndexEntry: SpeciesIndexEntry = {
+  aliases: [],
+  dexNumber: 172,
+  dexNumbers: ["172"],
+  name: "Pichu",
+  slug: "pichu",
+};
+
+const pikachuSpeciesIndexEntry: SpeciesIndexEntry = {
+  aliases: ["pika"],
+  dexNumber: 25,
+  dexNumbers: ["025", "25"],
+  name: "Pikachu",
+  slug: "pikachu",
+};
+
+const raichuSpeciesIndexEntry: SpeciesIndexEntry = {
+  aliases: [],
+  dexNumber: 26,
+  dexNumbers: ["026", "26"],
+  name: "Raichu",
+  slug: "raichu",
+};
+
+const pikachuForm = {
+  displayName: "Pikachu",
+  isDefault: true,
+  pokemonName: "pikachu",
+  pokemonUrl: "https://pokeapi.co/api/v2/pokemon/25/",
+  spriteFormKey: "$",
+};
+
+const pikachuDetail: PokemonDetail = {
+  abilities: [
+    {
+      isHidden: false,
+      name: "Static",
+      url: "https://pokeapi.co/api/v2/ability/9/",
+    },
+    {
+      isHidden: true,
+      name: "Lightning Rod",
+      url: "https://pokeapi.co/api/v2/ability/31/",
+    },
+  ],
+  captureRate: 190,
+  damageTaken: {
+    resistances: [{ multiplier: 0.5, type: "Flying" }],
+    weaknesses: [{ multiplier: 2, type: "Ground" }],
+  },
+  dexNumber: 25,
+  eggGroups: ["Field", "Fairy"],
+  evYield: [{ effort: 2, name: "Speed" }],
+  evolutionChain: pikachuPokemonEvolutionChain,
+  flavorText: "When several Pikachu gather, lightning can strike.",
+  flavorTexts: [
+    { source: "Red", text: "It has small electric sacs on both its cheeks." },
+    {
+      source: "Yellow",
+      text: "It keeps its tail raised to monitor its surroundings.",
+    },
+  ],
+  form: pikachuForm,
+  forms: [pikachuForm],
+  genderRatio: { femalePercent: 50, kind: "gendered", malePercent: 50 },
+  generation: "Generation I",
+  growthRate: "Medium",
+  heightMeters: 0.4,
+  name: "Pikachu",
+  species: "Mouse Pokemon",
+  sprite: { kind: "placeholder", label: "Pikachu" },
+  stats: [
+    { base: 35, name: "HP" },
+    { base: 55, name: "Attack" },
+    { base: 40, name: "Defense" },
+    { base: 50, name: "Sp. Attack" },
+    { base: 50, name: "Sp. Defense" },
+    { base: 90, name: "Speed" },
+  ],
+  types: ["Electric"],
+  weightKilograms: 6,
+};

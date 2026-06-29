@@ -28,6 +28,7 @@ type TerminalImageCapabilities = Pick<
 
 const kittyTerminalImageSupport: TerminalImageSupport = { protocol: "kitty" };
 const preparedImagePromises = new Map<string, Promise<PreparedTerminalImage>>();
+const preparedImages = new Map<string, PreparedTerminalImage>();
 
 export function detectTerminalImageSupport(
   env: TerminalEnvironment = Bun.env,
@@ -73,20 +74,42 @@ export async function prepareTerminalSpriteImage(
   filePath: string,
   canvas: TerminalImageOptions,
 ): Promise<PreparedTerminalImage> {
-  const cacheKey = `${filePath}:${canvas.width.toString()}x${canvas.height.toString()}`;
+  const cacheKey = terminalImageCacheKey(filePath, canvas);
   const cached = preparedImagePromises.get(cacheKey);
   if (Bun.env.NODE_ENV !== "development" && cached !== undefined) {
     return cached;
   }
 
-  const promise = prepareTerminalSpriteImageUncached(filePath, canvas).catch(
-    (error: unknown) => {
+  const promise = prepareTerminalSpriteImageUncached(filePath, canvas)
+    .then((image) => {
+      preparedImages.set(cacheKey, image);
+      return image;
+    })
+    .catch((error: unknown) => {
       preparedImagePromises.delete(cacheKey);
+      preparedImages.delete(cacheKey);
       throw error;
-    },
-  );
+    });
   preparedImagePromises.set(cacheKey, promise);
   return promise;
+}
+
+export function getPreparedTerminalSpriteImage(
+  filePath: string,
+  canvas: TerminalImageOptions,
+): PreparedTerminalImage | undefined {
+  if (Bun.env.NODE_ENV === "development") {
+    return undefined;
+  }
+
+  return preparedImages.get(terminalImageCacheKey(filePath, canvas));
+}
+
+function terminalImageCacheKey(
+  filePath: string,
+  canvas: TerminalImageOptions,
+): string {
+  return `${filePath}:${canvas.width.toString()}x${canvas.height.toString()}`;
 }
 
 async function prepareTerminalSpriteImageUncached(

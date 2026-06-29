@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   detectTerminalImageSupport,
   deleteTerminalImageSequence,
+  getPreparedTerminalSpriteImage,
   prepareTerminalSpriteImage,
   terminalImageEscapeSequence,
   terminalImagePlacementSequence,
@@ -103,6 +104,37 @@ test("rebuilds prepared terminal image metadata during development", async () =>
     });
 
     expect(prepared).toEqual({ height: 20, width: 40, filePath });
+  } finally {
+    if (originalNodeEnv === undefined) {
+      delete Bun.env.NODE_ENV;
+    } else {
+      Bun.env.NODE_ENV = originalNodeEnv;
+    }
+    await rm(directory, { force: true, recursive: true });
+  }
+});
+
+test("exposes prewarmed terminal images outside development", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "pkdx-terminal-image-"));
+  const filePath = join(directory, "sprite.png");
+  const originalNodeEnv = Bun.env.NODE_ENV;
+
+  try {
+    await Bun.write(filePath, transparentPng);
+    Bun.env.NODE_ENV = "test";
+
+    expect(
+      getPreparedTerminalSpriteImage(filePath, { height: 20, width: 40 }),
+    ).toBeUndefined();
+
+    const prepared = await prepareTerminalSpriteImage(filePath, {
+      height: 20,
+      width: 40,
+    });
+
+    expect(
+      getPreparedTerminalSpriteImage(filePath, { height: 20, width: 40 }),
+    ).toEqual(prepared);
   } finally {
     if (originalNodeEnv === undefined) {
       delete Bun.env.NODE_ENV;
