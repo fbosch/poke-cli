@@ -1,4 +1,4 @@
-import { createCliRenderer } from "@opentui/core";
+import { createCliRenderer, type CliRendererConfig } from "@opentui/core";
 import { createRoot } from "@opentui/react";
 import { findExactSpecies } from "./search";
 import { Root } from "./ui/root";
@@ -12,6 +12,16 @@ export type CliOptions = {
   imageMode: CliImageMode;
   initialQuery: string;
 };
+
+export const appExitSignals = [
+  "SIGTERM",
+  "SIGQUIT",
+  "SIGABRT",
+  "SIGHUP",
+  "SIGBREAK",
+  "SIGPIPE",
+  "SIGBUS",
+] satisfies NonNullable<CliRendererConfig["exitSignals"]>;
 
 export function getInitialSearchQuery(args: readonly string[]): string {
   return parseCliOptions(args).initialQuery;
@@ -60,6 +70,7 @@ export async function main(args = Bun.argv.slice(2)): Promise<void> {
 
   const renderer = await createCliRenderer({
     exitOnCtrlC: false,
+    exitSignals: appExitSignals,
     openConsoleOnError: debug,
   });
   if (debug) {

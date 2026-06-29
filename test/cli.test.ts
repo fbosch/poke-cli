@@ -13,6 +13,7 @@ import {
   type DetailState,
 } from "../src/app-state";
 import {
+  appExitSignals,
   getInitialSearchQuery,
   parseCliOptions,
   searchScreenTitle,
@@ -126,6 +127,10 @@ test("parses image mode flag without treating it as Search input", () => {
     imageMode: "builtin",
     initialQuery: "clefable",
   });
+});
+
+test("lets app state own Ctrl-C instead of OpenTUI signal cleanup", () => {
+  expect(appExitSignals).not.toContain("SIGINT");
 });
 
 test("exact launch arguments open Detail", () => {
