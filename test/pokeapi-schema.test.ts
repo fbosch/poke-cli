@@ -1,9 +1,12 @@
 import { expect, test } from "bun:test";
 import {
+  evolutionChainResourceSchema,
   parseAbilityResource,
   parseEvolutionChainResource,
   parsePokemonResource,
   parsePokemonSpeciesResource,
+  pokemonResourceSchema,
+  pokemonSpeciesResourceSchema,
 } from "../src/pokeapi/schema";
 import {
   pikachuPokemon,
@@ -15,11 +18,17 @@ test("parses consumed Pokemon resource fields", () => {
   expect(parsePokemonResource({ ...pikachuPokemon, unused: true })).toEqual(
     pikachuPokemon,
   );
+  expect(
+    pokemonResourceSchema.parse({ ...pikachuPokemon, unused: true }),
+  ).toEqual(pikachuPokemon);
 });
 
 test("parses consumed Pokemon Species fields", () => {
   expect(
     parsePokemonSpeciesResource({ ...pikachuSpecies, unused: true }),
+  ).toEqual(pikachuSpecies);
+  expect(
+    pokemonSpeciesResourceSchema.parse({ ...pikachuSpecies, unused: true }),
   ).toEqual(pikachuSpecies);
 });
 
@@ -39,37 +48,45 @@ test("rejects invalid consumed Pokemon fields", () => {
 });
 
 test("parses consumed Evolution Chain fields", () => {
-  expect(
-    parseEvolutionChainResource({
-      id: 10,
-      chain: {
-        evolution_details: [],
-        evolves_to: [
-          {
-            evolution_details: [
-              {
-                gender: 1,
-                min_level: 22,
-                trigger: {
-                  name: "level-up",
-                  url: "https://pokeapi.co/api/v2/evolution-trigger/1/",
-                },
+  const resource = {
+    id: 10,
+    chain: {
+      evolution_details: [],
+      evolves_to: [
+        {
+          evolution_details: [
+            {
+              gender: 1,
+              min_level: 22,
+              trigger: {
+                name: "level-up",
+                url: "https://pokeapi.co/api/v2/evolution-trigger/1/",
               },
-            ],
-            evolves_to: [],
-            species: {
-              name: "raichu",
-              url: "https://pokeapi.co/api/v2/pokemon-species/26/",
             },
+          ],
+          evolves_to: [],
+          species: {
+            name: "raichu",
+            url: "https://pokeapi.co/api/v2/pokemon-species/26/",
           },
-        ],
-        species: {
-          name: "pikachu",
-          url: "https://pokeapi.co/api/v2/pokemon-species/25/",
         },
+      ],
+      species: {
+        name: "pikachu",
+        url: "https://pokeapi.co/api/v2/pokemon-species/25/",
       },
-    }),
-  ).toMatchObject({
+    },
+  };
+
+  expect(parseEvolutionChainResource(resource)).toMatchObject({
+    id: 10,
+    chain: {
+      species: {
+        name: "pikachu",
+      },
+    },
+  });
+  expect(evolutionChainResourceSchema.parse(resource)).toMatchObject({
     id: 10,
     chain: {
       species: {

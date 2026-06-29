@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,6 +15,7 @@ import {
 import {
   appExitSignals,
   getInitialSearchQuery,
+  main,
   parseCliOptions,
   searchScreenTitle,
 } from "../src/cli";
@@ -131,6 +132,31 @@ test("parses image mode flag without treating it as Search input", () => {
 
 test("lets app state own Ctrl-C instead of OpenTUI signal cleanup", () => {
   expect(appExitSignals).not.toContain("SIGINT");
+});
+
+test("main smoke mode prints the launch screen", async () => {
+  const originalSmokeExit = Bun.env.PKDX_SMOKE_EXIT;
+  const writes: string[] = [];
+  const write = spyOn(process.stdout, "write").mockImplementation((chunk) => {
+    writes.push(chunk.toString());
+    return true;
+  });
+
+  try {
+    Bun.env.PKDX_SMOKE_EXIT = "1";
+
+    await main(["pikachu"]);
+    await main(["pika"]);
+
+    expect(writes).toEqual(["Detail\n", "Search\n"]);
+  } finally {
+    write.mockRestore();
+    if (originalSmokeExit === undefined) {
+      delete Bun.env.PKDX_SMOKE_EXIT;
+    } else {
+      Bun.env.PKDX_SMOKE_EXIT = originalSmokeExit;
+    }
+  }
 });
 
 test("exact launch arguments open Detail", () => {
