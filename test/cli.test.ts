@@ -1,4 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
+import { Database } from "bun:sqlite";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -22,10 +23,18 @@ import {
 import type { PokemonDetail, PokemonForm } from "../src/pokemon-detail";
 import {
   createFileStorage,
+  createQueryPersister,
+  createSqliteQueryStorage,
   persistedQueryMaxAge,
+  queryCacheBuster,
   queryCachePolicies,
+  queryCacheDatabasePath,
+  queryPersisterPrefix,
+  queryPersisterStorageKey,
   runtimeQueryCachePolicies,
+  shardForDexNumber,
 } from "../src/query-cache";
+import packageJson from "../package.json";
 import { findExactSpecies } from "../src/search";
 import { pikachuPokemonEvolutionChain } from "./support/pokeapi-fixtures";
 
@@ -892,6 +901,8 @@ test("Detail error can fall back to Search on slash", () => {
 });
 
 test("defines per-query cache policies", () => {
+  expect(queryCacheBuster).toBe(`pkdx-${packageJson.version}`);
+  expect(queryPersisterPrefix).toBe("pkdx-query");
   expect(queryCachePolicies.pokeapiResource.gcTime).toBeGreaterThan(
     queryCachePolicies.pokemonDetail.gcTime,
   );
@@ -912,6 +923,16 @@ test("defines per-query cache policies", () => {
   );
 });
 
+test("maps National Dex numbers to generation cache shards", () => {
+  expect(shardForDexNumber(1)).toBe("generation-1");
+  expect(shardForDexNumber(151)).toBe("generation-1");
+  expect(shardForDexNumber(152)).toBe("generation-2");
+  expect(shardForDexNumber(251)).toBe("generation-2");
+  expect(shardForDexNumber(906)).toBe("generation-9");
+  expect(shardForDexNumber(1025)).toBe("generation-9");
+  expect(shardForDexNumber(1026)).toBe("shared");
+});
+
 test("persists query cache state to filesystem storage", async () => {
   const cacheDirectory = await mkdtemp(join(tmpdir(), "pokedex-query-cache-"));
 
@@ -927,6 +948,87 @@ test("persists query cache state to filesystem storage", async () => {
     await rm(cacheDirectory, { force: true, recursive: true });
   }
 });
+
+test("persists individual queries into generation-indexed sqlite storage", async () => {
+  const cacheDirectory = await mkdtemp(join(tmpdir(), "pokedex-query-cache-"));
+
+  try {
+    const storage = createSqliteQueryStorage(cacheDirectory);
+    const persister = createQueryPersister(cacheDirectory);
+
+    await storage.setItem(
+      queryPersisterStorageKey("detail-pikachu"),
+      JSON.stringify({
+        buster: queryCacheBuster,
+        queryHash: "detail-pikachu",
+        queryKey: ["pokemon-detail", "pikachu", "$"],
+        state: persistedQueryState("pikachu"),
+      }),
+    );
+
+    const database = new Database(queryCacheDatabasePath(cacheDirectory), {
+      readonly: true,
+    });
+    const row = database
+      .query("SELECT shard FROM query_cache WHERE key = $key")
+      .get({ $key: queryPersisterStorageKey("detail-pikachu") }) as {
+      shard: string;
+    } | null;
+    database.close();
+    expect(row?.shard).toBe("generation-1");
+
+    expect(await persister.retrieveQuery<string>("detail-pikachu")).toBe(
+      "pikachu",
+    );
+  } finally {
+    await rm(cacheDirectory, { force: true, recursive: true });
+  }
+});
+
+test("removes malformed individual persisted queries", async () => {
+  const cacheDirectory = await mkdtemp(join(tmpdir(), "pokedex-query-cache-"));
+
+  try {
+    const storage = createSqliteQueryStorage(cacheDirectory);
+    const persister = createQueryPersister(cacheDirectory);
+
+    await storage.setItem(
+      queryPersisterStorageKey("detail-pikachu"),
+      JSON.stringify({
+        buster: "old-version",
+        queryHash: "detail-pikachu",
+        queryKey: ["pokemon-detail", "pikachu", "$"],
+        state: persistedQueryState("pikachu"),
+      }),
+    );
+
+    expect(
+      await persister.retrieveQuery<string>("detail-pikachu"),
+    ).toBeUndefined();
+    expect(
+      await storage.getItem(queryPersisterStorageKey("detail-pikachu")),
+    ).toBeNull();
+  } finally {
+    await rm(cacheDirectory, { force: true, recursive: true });
+  }
+});
+
+function persistedQueryState(data: string) {
+  return {
+    data,
+    dataUpdateCount: 1,
+    dataUpdatedAt: Date.now(),
+    error: null,
+    errorUpdateCount: 0,
+    errorUpdatedAt: 0,
+    fetchFailureCount: 0,
+    fetchFailureReason: null,
+    fetchMeta: null,
+    fetchStatus: "idle" as const,
+    isInvalidated: false,
+    status: "success" as const,
+  };
+}
 
 function throwMissingSpecies(slug: string): never {
   throw new Error(`Missing test species: ${slug}`);
