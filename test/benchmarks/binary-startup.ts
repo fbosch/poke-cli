@@ -3,6 +3,13 @@ import { benchmarkResult } from "../support/benchmark";
 const iterations = Number(Bun.env.PKDX_BINARY_STARTUP_BENCH_ITERATIONS ?? 25);
 const binaryPath = process.platform === "win32" ? "dist/pkdx.exe" : "dist/pkdx";
 
+type BinaryStartupBenchmark = {
+  args: readonly string[];
+  command?: string;
+  expectedStdout: string;
+  name: string;
+};
+
 const benchmarks = [
   {
     args: ["pikachu"],
@@ -26,7 +33,7 @@ const benchmarks = [
     expectedStdout: "Search\n",
     name: "bun-smoke-search",
   },
-] as const;
+] satisfies readonly BinaryStartupBenchmark[];
 
 const results = benchmarks.map((benchmark) => {
   let checksum = 0;

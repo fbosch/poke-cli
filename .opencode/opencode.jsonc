@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md", "CONTEXT.md"],
+  "references": {
+    "adr": {
+      "path": "docs/adr",
+      "description": "Accepted architecture and tooling decisions for pkdx."
+    },
+    "openspec": {
+      "path": "openspec",
+      "description": "OpenSpec changes, specs, and implementation tasks for pkdx."
+    }
+  },
+  "formatter": true
+}

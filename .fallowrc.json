@@ -3,5 +3,8 @@
   "duplicates": {
     "ignore": ["test/benchmarks/*.ts"]
   },
+  "health": {
+    "ignore": ["test/benchmarks/*.ts", "test/support/*.ts"]
+  },
   "ignorePatterns": ["src/pokeapi/generated.ts"]
 }
