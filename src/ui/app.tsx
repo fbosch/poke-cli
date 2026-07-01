@@ -35,7 +35,7 @@ import { prepareTerminalSpriteImage } from "#src/terminal-images.ts";
 import { CacheDebugPanel } from "./CacheDebugPanel";
 import { QueryDebugPanel } from "./QueryDebugPanel";
 import {
-  findExactSpecies,
+  findSpeciesByIdentityOrAlias,
   getSpeciesByDexDelta,
   type SpeciesIndexEntry,
 } from "#src/search/index.ts";
@@ -150,7 +150,7 @@ export function App({
             );
           }}
           onSelectSpecies={(name) => {
-            const species = findExactSpecies(name);
+            const species = findSpeciesByIdentityOrAlias(name);
             if (species === undefined) {
               return;
             }

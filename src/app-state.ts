@@ -1,6 +1,7 @@
 import { match, P } from "ts-pattern";
 import {
   findExactSpecies,
+  findSpeciesByIdentityOrAlias,
   getSpeciesByDexDelta,
   moveSearchSelection as moveSearchResultSelection,
   searchSelection,
@@ -14,6 +15,7 @@ import type {
 } from "./pokemon-detail";
 import {
   hasPokemonEvolutionChain,
+  pokemonEvolutionShortcutTargets,
   pokemonFormCarryoverIntent,
   pokemonFormIntent,
   pokemonFormTargetKey,
@@ -391,7 +393,31 @@ function applyEvolutionOverlayKey(state: DetailState, key: AppKey): AppState {
     return closeDetailOverlay(state);
   }
 
+  const selectedSpecies = evolutionShortcutSpecies(state, key);
+  if (selectedSpecies !== undefined) {
+    return loadDetailSpecies(state, selectedSpecies);
+  }
+
   return state;
+}
+
+function evolutionShortcutSpecies(
+  state: DetailState,
+  key: AppKey,
+): SpeciesIndexEntry | undefined {
+  if (state.detail === undefined || /^[1-9]$/.test(key.name) === false) {
+    return undefined;
+  }
+
+  const shortcutIndex = Number.parseInt(key.name, 10) - 1;
+  const target = pokemonEvolutionShortcutTargets(
+    state.detail.detail.evolutionChain,
+  ).at(shortcutIndex);
+  if (target === undefined) {
+    return undefined;
+  }
+
+  return findSpeciesByIdentityOrAlias(target.targetName);
 }
 
 function applyFormOverlayKey(state: DetailState, key: AppKey): AppState {

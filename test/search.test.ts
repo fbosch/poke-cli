@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   findExactSpecies,
+  findSpeciesByIdentityOrAlias,
   minimumSearchQueryLength,
   moveSearchSelection,
   searchSelection,
@@ -23,6 +24,11 @@ test("exact species matching excludes fuzzy aliases", () => {
   expect(findExactSpecies("025")?.slug).toBe("pikachu");
   expect(findExactSpecies("1025")?.slug).toBe("pecharunt");
   expect(findExactSpecies("pika")).toBeUndefined();
+});
+
+test("alias-aware species matching accepts explicit aliases", () => {
+  expect(findSpeciesByIdentityOrAlias("nidoran f")?.slug).toBe("nidoran-f");
+  expect(findSpeciesByIdentityOrAlias("pika")?.slug).toBe("pikachu");
 });
 
 test("search starts after one input character", () => {

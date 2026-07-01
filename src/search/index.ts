@@ -46,6 +46,11 @@ const exactSpeciesByIdentity = new Map(
     [name, slug, ...dexNumbers].map((value) => [value, entry] as const),
   ),
 );
+const speciesByAlias = new Map(
+  normalizedSpeciesIndex.flatMap(({ aliases, entry }) =>
+    aliases.map((value) => [value, entry] as const),
+  ),
+);
 const speciesIndexBySlug = new Map(
   speciesIndex.map((entry, index) => [entry.slug, index] as const),
 );
@@ -94,6 +99,20 @@ export function findExactSpecies(query: string): SpeciesIndexEntry | undefined {
   }
 
   return exactSpeciesByIdentity.get(normalizedQuery);
+}
+
+export function findSpeciesByIdentityOrAlias(
+  query: string,
+): SpeciesIndexEntry | undefined {
+  const normalizedQuery = normalize(query);
+  if (normalizedQuery.length === 0) {
+    return undefined;
+  }
+
+  return (
+    exactSpeciesByIdentity.get(normalizedQuery) ??
+    speciesByAlias.get(normalizedQuery)
+  );
 }
 
 export function searchSelection(

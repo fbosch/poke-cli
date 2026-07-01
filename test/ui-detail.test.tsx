@@ -16,6 +16,7 @@ import {
   EvolutionViewer,
   buildEvolutionFlowchartLinks,
   buildEvolutionFlowchartLines,
+  buildEvolutionShortcutIndicators,
 } from "../src/ui/detail/EvolutionViewer";
 import { FormSelector } from "../src/ui/detail/FormSelector";
 import { FlavorTextPanel } from "../src/ui/detail/FlavorTextPanel";
@@ -254,6 +255,16 @@ test("formats evolution flowchart lines with methods", () => {
   ]);
 });
 
+test("numbers evolution shortcut indicators in species order", () => {
+  expect(
+    buildEvolutionShortcutIndicators(pikachuPokemonEvolutionChain),
+  ).toEqual([
+    { indicator: "[1]", targetName: "Pichu" },
+    { indicator: "[2]", targetName: "Pikachu" },
+    { indicator: "[3]", targetName: "Raichu" },
+  ]);
+});
+
 test("formats branching Eevee evolution flowchart without clipping labels", () => {
   const lines = buildEvolutionFlowchartLines(eeveePokemonEvolutionChain);
   const output = lines.join("\n");
@@ -270,6 +281,39 @@ test("formats branching Eevee evolution flowchart without clipping labels", () =
   expect(output).toContain("▶ Glaceon");
   expect(output).toContain("▶ Sylveon");
   expect(output).toContain("[level up + happiness 220 + night]");
+});
+
+test("formats shared intermediate branching evolutions", () => {
+  const lines = buildEvolutionFlowchartLines({
+    root: {
+      evolvesTo: [
+        {
+          evolvesTo: [
+            {
+              evolvesTo: [],
+              method: "level-up, min-level 30",
+              name: "Gardevoir",
+            },
+            {
+              evolvesTo: [],
+              method: "use-item, Dawn Stone",
+              name: "Gallade",
+            },
+          ],
+          method: "level-up, min-level 20",
+          name: "Kirlia",
+        },
+      ],
+      method: undefined,
+      name: "Ralts",
+    },
+  });
+  const output = lines.join("\n");
+
+  expect(output).toContain("Ralts");
+  expect(output).toContain("Kirlia");
+  expect(output).toContain("Gardevoir");
+  expect(output).toContain("Gallade");
 });
 
 test("links form-specific evolution labels to base species names", () => {

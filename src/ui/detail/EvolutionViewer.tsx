@@ -2,6 +2,7 @@ import type {
   PokemonEvolution,
   PokemonEvolutionChain,
 } from "#src/pokemon-detail.ts";
+import { pokemonEvolutionShortcutTargets } from "#src/pokemon-detail.ts";
 import { useState } from "react";
 import { KeyHints, Modal, keyHintsWidth } from "../components";
 import { colors, textStyles } from "../design-tokens";
@@ -37,6 +38,7 @@ const evolutionChartRowsCache = new WeakMap<
   PokemonEvolutionChain,
   EvolutionChartRow[]
 >();
+const noEvolutionShortcutNumbers = new Map<string, number>();
 
 export function EvolutionViewer({
   evolutionChain,
@@ -47,7 +49,8 @@ export function EvolutionViewer({
   onClose?: () => void;
   onSelectSpecies: (name: string) => void;
 }) {
-  const rows = buildEvolutionChartRows(evolutionChain);
+  const shortcutNumbers = evolutionShortcutNumbers(evolutionChain);
+  const rows = buildEvolutionChartRows(evolutionChain, shortcutNumbers);
   const contentWidth = chartWidth(rows) + evolutionModalHorizontalPadding * 2;
   const modalWidth = Math.min(evolutionModalMaxWidth, contentWidth + 4);
 
@@ -158,36 +161,64 @@ export function buildEvolutionFlowchartLinks(
   );
 }
 
+export function buildEvolutionShortcutIndicators(
+  evolutionChain: PokemonEvolutionChain,
+): Array<{ indicator: string; targetName: string }> {
+  return pokemonEvolutionShortcutTargets(evolutionChain)
+    .slice(0, 9)
+    .map((target, index) => ({
+      indicator: `[${(index + 1).toString()}]`,
+      targetName: target.targetName,
+    }));
+}
+
+function evolutionShortcutNumbers(
+  evolutionChain: PokemonEvolutionChain,
+): ReadonlyMap<string, number> {
+  return new Map(
+    pokemonEvolutionShortcutTargets(evolutionChain)
+      .slice(0, 9)
+      .map((target, index) => [target.targetName, index + 1]),
+  );
+}
+
 function buildEvolutionChartRows(
   evolutionChain: PokemonEvolutionChain,
+  shortcutNumbers: ReadonlyMap<string, number> = noEvolutionShortcutNumbers,
 ): EvolutionChartRow[] {
+  if (shortcutNumbers.size > 0) {
+    return buildUncachedEvolutionChartRows(evolutionChain, shortcutNumbers);
+  }
+
   const cached = evolutionChartRowsCache.get(evolutionChain);
   if (cached !== undefined) {
     return cached;
   }
 
+  const rows = buildUncachedEvolutionChartRows(evolutionChain, shortcutNumbers);
+  evolutionChartRowsCache.set(evolutionChain, rows);
+  return rows;
+}
+
+function buildUncachedEvolutionChartRows(
+  evolutionChain: PokemonEvolutionChain,
+  shortcutNumbers: ReadonlyMap<string, number>,
+): EvolutionChartRow[] {
   const routes = buildEvolutionRoutes(evolutionChain.root);
   if (routes.length === 0) {
-    const rows = [
-      pokemonNameRow(
-        evolutionChain.root.name,
-        "",
-        evolutionChain.root.speciesName ?? evolutionChain.root.name,
-      ),
+    return [
+      pokemonNameRow(evolutionChain.root.name, "", {
+        shortcutNumbers,
+        targetName: evolutionChain.root.speciesName ?? evolutionChain.root.name,
+      }),
     ];
-    evolutionChartRowsCache.set(evolutionChain, rows);
-    return rows;
   }
 
   if (routes.length === 1) {
-    const rows = [routePathRow(routes[0] ?? throwMissingRoute())];
-    evolutionChartRowsCache.set(evolutionChain, rows);
-    return rows;
+    return [routePathRow(routes[0] ?? throwMissingRoute(), shortcutNumbers)];
   }
 
-  const rows = branchingRouteRows(routes);
-  evolutionChartRowsCache.set(evolutionChain, rows);
-  return rows;
+  return branchingRouteRows(routes, shortcutNumbers);
 }
 
 function buildEvolutionRoutes(evolution: PokemonEvolution): EvolutionRoute[] {
@@ -229,16 +260,29 @@ function childEvolutionRoutes(
   );
 }
 
-function routePathRow(route: EvolutionRoute): EvolutionChartRow {
-  let text = route.root;
+function routePathRow(
+  route: EvolutionRoute,
+  shortcutNumbers: ReadonlyMap<string, number>,
+): EvolutionChartRow {
+  const rootIndicator = evolutionShortcutIndicator(
+    route.rootTargetName,
+    shortcutNumbers,
+  );
+  let text = `${rootIndicator}${route.root}`;
   const links: EvolutionChartLink[] = [
-    nameLink(route.root, route.rootTargetName, 0),
+    nameLink(route.root, route.rootTargetName, rootIndicator.length),
   ];
 
   for (const step of route.steps) {
     text = `${text} ─${step.method}─▶ `;
-    links.push(nameLink(step.name, step.targetName, text.length));
-    text = `${text}${step.name}`;
+    const indicator = evolutionShortcutIndicator(
+      step.targetName,
+      shortcutNumbers,
+    );
+    links.push(
+      nameLink(step.name, step.targetName, text.length + indicator.length),
+    );
+    text = `${text}${indicator}${step.name}`;
   }
 
   return { links, text };
@@ -246,6 +290,7 @@ function routePathRow(route: EvolutionRoute): EvolutionChartRow {
 
 function branchingRouteRows(
   routes: readonly EvolutionRoute[],
+  shortcutNumbers: ReadonlyMap<string, number>,
 ): EvolutionChartRow[] {
   const firstRoute = routes[0];
   if (firstRoute === undefined) {
@@ -254,37 +299,56 @@ function branchingRouteRows(
 
   const root = firstRoute.root;
   const rootTargetName = firstRoute.rootTargetName;
-  const rootWidth = root.length;
+  const rootIndicator = evolutionShortcutIndicator(
+    rootTargetName,
+    shortcutNumbers,
+  );
+  const rootLabel = `${rootIndicator}${root}`;
+  const rootWidth = rootLabel.length;
   const methodWidth = Math.max(
-    ...routes.map(
-      (route) => route.steps.map((step) => step.method).join(" / ").length,
-    ),
+    ...routes.map((route) => route.steps[0]?.method.length ?? 0),
   );
 
   return routes.map((route, index) => {
     const isFirst = index === 0;
     const isLast = index === routes.length - 1;
-    const rootText = isFirst ? root : " ".repeat(rootWidth);
+    const rootText = isFirst ? rootLabel : " ".repeat(rootWidth);
     const branch = isFirst ? "┬" : isLast ? "└" : "├";
-    const method = route.steps
-      .map((step) => step.method)
-      .join(" / ")
-      .padEnd(methodWidth);
-    const target = route.steps.at(-1)?.name ?? root;
-    const prefix = `${rootText} ${branch}─${method}─▶ `;
+    let text = `${rootText} ${branch}`;
+    const links: EvolutionChartLink[] = isFirst
+      ? [nameLink(root, rootTargetName, rootIndicator.length)]
+      : [];
+
+    route.steps.forEach((step, stepIndex) => {
+      const method =
+        stepIndex === 0 ? step.method.padEnd(methodWidth) : step.method;
+      text = `${text}─${method}─▶ `;
+      const indicator = evolutionShortcutIndicator(
+        step.targetName,
+        shortcutNumbers,
+      );
+      links.push(
+        nameLink(step.name, step.targetName, text.length + indicator.length),
+      );
+      text = `${text}${indicator}${step.name}`;
+      if (stepIndex < route.steps.length - 1) {
+        text = `${text} `;
+      }
+    });
 
     return {
-      links: [
-        ...(isFirst ? [nameLink(root, rootTargetName, 0)] : []),
-        nameLink(
-          target,
-          route.steps.at(-1)?.targetName ?? target,
-          prefix.length,
-        ),
-      ],
-      text: `${prefix}${target}`,
+      links,
+      text,
     };
   });
+}
+
+function evolutionShortcutIndicator(
+  targetName: string,
+  shortcutNumbers: ReadonlyMap<string, number>,
+): string {
+  const shortcutNumber = shortcutNumbers.get(targetName);
+  return shortcutNumber === undefined ? "" : `[${shortcutNumber.toString()}]`;
 }
 
 function evolutionMethodLabel(evolution: PokemonEvolution): string {
@@ -300,11 +364,18 @@ function evolutionMethodLabel(evolution: PokemonEvolution): string {
 function pokemonNameRow(
   name: string,
   prefix: string,
-  targetName = name,
+  {
+    shortcutNumbers = noEvolutionShortcutNumbers,
+    targetName = name,
+  }: {
+    shortcutNumbers?: ReadonlyMap<string, number>;
+    targetName?: string;
+  } = {},
 ): EvolutionChartRow {
+  const indicator = evolutionShortcutIndicator(targetName, shortcutNumbers);
   return {
-    links: [nameLink(name, targetName, prefix.length)],
-    text: `${prefix}${name}`,
+    links: [nameLink(name, targetName, prefix.length + indicator.length)],
+    text: `${prefix}${indicator}${name}`,
   };
 }
 

@@ -652,6 +652,19 @@ test("Detail evolution selection loads the selected species", () => {
   });
 });
 
+test("Detail evolution viewer loads numbered shortcut species", () => {
+  const state = loadedPikachuDetailState();
+  const opened = applyAppKey(state, { name: "e" });
+  const selected = applyAppKey(opened, { name: "3" });
+
+  expect(selected).toMatchObject({
+    screen: "detail",
+    detailOverlay: undefined,
+    species: { slug: "raichu" },
+    status: "loading",
+  });
+});
+
 test("Detail form selector opens, moves, and closes with Escape", () => {
   const state = loadedPikachuMultiFormDetailState();
   const opened = applyAppKey(state, { name: "f" });

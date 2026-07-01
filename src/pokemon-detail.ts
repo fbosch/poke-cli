@@ -66,10 +66,36 @@ export type PokemonEvolution = {
   url?: string;
 };
 
+export type PokemonEvolutionShortcutTarget = {
+  displayName: string;
+  targetName: string;
+};
+
 export function hasPokemonEvolutionChain(
   evolutionChain: PokemonEvolutionChain,
 ): boolean {
   return evolutionChain.root.evolvesTo.length > 0;
+}
+
+export function pokemonEvolutionShortcutTargets(
+  evolutionChain: PokemonEvolutionChain,
+): PokemonEvolutionShortcutTarget[] {
+  const seenTargets = new Set<string>();
+  const targets: PokemonEvolutionShortcutTarget[] = [];
+  const visit = (evolution: PokemonEvolution) => {
+    const targetName = evolution.speciesName ?? evolution.name;
+    if (seenTargets.has(targetName) === false) {
+      seenTargets.add(targetName);
+      targets.push({ displayName: evolution.name, targetName });
+    }
+
+    for (const child of evolution.evolvesTo) {
+      visit(child);
+    }
+  };
+
+  visit(evolutionChain.root);
+  return targets;
 }
 
 export type PokemonEvYield = {
@@ -429,7 +455,10 @@ function buildPokemonEvolution(
       ...(displayName === speciesName ? {} : { speciesName }),
       url: evolution.species.url,
     },
-    selectedBaseFormName: selectedDetail?.base_form?.name,
+    selectedBaseFormName:
+      selectedDetail?.base_form?.name === form.pokemonName
+        ? selectedDetail.base_form.name
+        : undefined,
   };
 }
 
