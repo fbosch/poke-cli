@@ -32,6 +32,7 @@ import {
   pokespriteRenderedSpriteQueryOptions,
 } from "#src/pokesprite.ts";
 import { prepareTerminalSpriteImage } from "#src/terminal-images.ts";
+import { CacheDebugPanel } from "./CacheDebugPanel";
 import { QueryDebugPanel } from "./QueryDebugPanel";
 import {
   findExactSpecies,
@@ -175,7 +176,7 @@ export function App({
           }}
           terminalImagesEnabled={imageMode === "builtin"}
         />
-        {debug ? <QueryDebugPanel /> : null}
+        {debug ? <DebugPanels /> : null}
       </>
     );
   }
@@ -183,7 +184,16 @@ export function App({
   return (
     <>
       <SearchView query={state.query} selectedIndex={state.selectedIndex} />
-      {debug ? <QueryDebugPanel /> : null}
+      {debug ? <DebugPanels /> : null}
+    </>
+  );
+}
+
+function DebugPanels() {
+  return (
+    <>
+      <QueryDebugPanel />
+      <CacheDebugPanel />
     </>
   );
 }

@@ -34,7 +34,6 @@ import {
   runtimeQueryCachePolicies,
   shardForDexNumber,
 } from "../src/query-cache";
-import packageJson from "../package.json";
 import { findExactSpecies } from "../src/search";
 import { pikachuPokemonEvolutionChain } from "./support/pokeapi-fixtures";
 
@@ -901,7 +900,7 @@ test("Detail error can fall back to Search on slash", () => {
 });
 
 test("defines per-query cache policies", () => {
-  expect(queryCacheBuster).toBe(`pkdx-${packageJson.version}`);
+  expect(queryCacheBuster).toMatch(/^pkdx-query-cache-[a-f0-9]{6}$/);
   expect(queryPersisterPrefix).toBe("pkdx-query");
   expect(queryCachePolicies.pokeapiResource.gcTime).toBeGreaterThan(
     queryCachePolicies.pokemonDetail.gcTime,

@@ -241,6 +241,15 @@ export const evolutionChainResourceSchema = z.object({
   id: z.number(),
 });
 
+export const pokeApiQueryCacheSchemas = {
+  ability: z.toJSONSchema(abilityResourceSchema),
+  evolutionChain: z.toJSONSchema(evolutionChainResourceSchema),
+  pokemon: z.toJSONSchema(pokemonResourceSchema),
+  pokemonForm: z.toJSONSchema(pokemonFormResourceSchema),
+  pokemonSpecies: z.toJSONSchema(pokemonSpeciesResourceSchema),
+  versionGroup: z.toJSONSchema(versionGroupResourceSchema),
+} as const;
+
 export function parsePokemonResource(resource: unknown): PokeApiPokemon {
   return pokemonResourceSchema.parse(resource);
 }

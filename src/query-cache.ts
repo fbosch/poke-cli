@@ -5,17 +5,21 @@ import type {
 } from "@tanstack/react-query-persist-client";
 import { experimental_createQueryPersister } from "@tanstack/react-query-persist-client";
 import { Database } from "bun:sqlite";
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, rm, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { match, P } from "ts-pattern";
-import packageJson from "../package.json";
+import { pokeApiQueryCacheSchemas } from "./pokeapi/schema";
+import { pokespriteQueryCacheSchemas } from "./pokesprite-schema";
 import { findExactSpecies } from "./search";
 
 const oneHour = 60 * 60 * 1000;
 const oneDay = 24 * oneHour;
 const maxRuntimeGcTime = 24 * oneDay;
 
-export const queryCacheBuster = `pkdx-${packageJson.version}`;
+export const queryCacheBuster = `pkdx-query-cache-${schemaFingerprint([
+  pokeApiQueryCacheSchemas,
+  pokespriteQueryCacheSchemas,
+])}`;
 
 export const queryCachePolicies = {
   pokeapiResource: {
@@ -45,6 +49,22 @@ export const runtimeQueryCachePolicies = {
 } as const;
 
 export const queryPersisterPrefix = "pkdx-query";
+
+export type QueryCacheStorageStats = {
+  buster: string;
+  cacheDirectory: string;
+  databaseBytes: number;
+  databasePath: string;
+  error?: string;
+  maxAgeDays: number;
+  mode: "in-memory" | "sqlite";
+  prefix: string;
+  queryCount: number;
+  shardCounts: Partial<Record<QueryCacheShard, number>>;
+  shmBytes: number;
+  totalBytes: number;
+  walBytes: number;
+};
 
 export function createAppQueryClient(): QueryClient {
   const queryPersister =
@@ -77,6 +97,19 @@ function runtimeQueryCachePolicy<
   };
 }
 
+function schemaFingerprint(schemas: readonly unknown[]): string {
+  const hasher = new Bun.CryptoHasher("sha256");
+  for (const schema of schemas) {
+    const source = JSON.stringify(schema);
+    hasher.update(source.length.toString());
+    hasher.update("\0");
+    hasher.update(source);
+    hasher.update("\0");
+  }
+
+  return hasher.digest("hex").slice(-6);
+}
+
 export function createQueryPersister(
   cacheDirectory = getDefaultCacheDirectory(),
 ): ReturnType<typeof experimental_createQueryPersister> {
@@ -86,6 +119,63 @@ export function createQueryPersister(
     prefix: queryPersisterPrefix,
     storage: createSqliteQueryStorage(cacheDirectory),
   });
+}
+
+export async function queryCacheStorageStats(
+  cacheDirectory = getDefaultCacheDirectory(),
+): Promise<QueryCacheStorageStats> {
+  const databasePath = queryCacheDatabasePath(cacheDirectory);
+  const [databaseBytes, walBytes, shmBytes] = await Promise.all([
+    fileSize(databasePath),
+    fileSize(`${databasePath}-wal`),
+    fileSize(`${databasePath}-shm`),
+  ]);
+  const baseStats = {
+    buster: queryCacheBuster.slice(-6),
+    cacheDirectory,
+    databaseBytes,
+    databasePath,
+    maxAgeDays: Math.round(persistedQueryMaxAge / oneDay),
+    mode: Bun.env.NODE_ENV === "development" ? "in-memory" : "sqlite",
+    prefix: queryPersisterPrefix,
+    queryCount: 0,
+    shardCounts: {},
+    shmBytes,
+    totalBytes: databaseBytes + walBytes + shmBytes,
+    walBytes,
+  } satisfies QueryCacheStorageStats;
+
+  if (databaseBytes === 0) {
+    return baseStats;
+  }
+
+  let database: Database | undefined;
+  try {
+    database = new Database(databasePath, { readonly: true });
+    const row = database
+      .query("SELECT COUNT(*) AS count FROM query_cache")
+      .get() as {
+      count: number;
+    };
+    const shardRows = database
+      .query("SELECT shard, COUNT(*) AS count FROM query_cache GROUP BY shard")
+      .all() as { count: number; shard: QueryCacheShard }[];
+
+    return {
+      ...baseStats,
+      queryCount: row.count,
+      shardCounts: Object.fromEntries(
+        shardRows.map((shardRow) => [shardRow.shard, shardRow.count]),
+      ),
+    };
+  } catch (error) {
+    return {
+      ...baseStats,
+      error: error instanceof Error ? error.message : "Could not read cache",
+    };
+  } finally {
+    database?.close();
+  }
 }
 
 export function createFileStorage(cacheDirectory: string): AsyncStorage {
@@ -169,6 +259,14 @@ function getDefaultCacheDirectory(): string {
 
 function cacheFilePath(cacheDirectory: string, key: string): string {
   return join(cacheDirectory, encodeURIComponent(key));
+}
+
+async function fileSize(filePath: string): Promise<number> {
+  try {
+    return (await stat(filePath)).size;
+  } catch {
+    return 0;
+  }
 }
 
 type PokemonGeneration = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;

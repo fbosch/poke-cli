@@ -1,6 +1,7 @@
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot } from "@opentui/react";
 import { expect, test } from "bun:test";
+import { CacheDebugPanelView } from "../src/ui/CacheDebugPanel";
 import { QueryDebugPanelView } from "../src/ui/QueryDebugPanel";
 import { App } from "../src/ui/app";
 import { DamageTakenPanel } from "../src/ui/detail/DamageTakenPanel";
@@ -57,6 +58,48 @@ test("OpenTUI renderer draws the query debug panel", async () => {
     const frame = await renderUntil(renderOnce, captureCharFrame, "all:1");
     expect(frame).toContain("all:1");
     expect(frame).toContain("detail pikachu default");
+  } finally {
+    root.unmount();
+    renderer.destroy();
+  }
+});
+
+test("OpenTUI renderer draws the cache debug panel", async () => {
+  const { renderer, renderOnce, captureCharFrame } = await createTestRenderer({
+    height: 20,
+    width: 80,
+  });
+  const root = createRoot(renderer);
+
+  try {
+    root.render(
+      <CacheDebugPanelView
+        stats={{
+          buster: "abc123",
+          cacheDirectory: "/tmp/pkdx-cache",
+          databaseBytes: 2048,
+          databasePath: "/tmp/pkdx-cache/queries.sqlite",
+          maxAgeDays: 90,
+          mode: "sqlite",
+          prefix: "pkdx-query",
+          queryCount: 3,
+          shardCounts: { "generation-1": 2, shared: 1 },
+          shmBytes: 512,
+          totalBytes: 3072,
+          walBytes: 512,
+        }}
+      />,
+    );
+
+    const frame = await renderUntil(
+      renderOnce,
+      captureCharFrame,
+      "storage  sqlite",
+    );
+    expect(frame).toContain("storage  sqlite");
+    expect(frame).toContain("3 queries");
+    expect(frame).toContain("schema   abc123");
+    expect(frame).toContain("g1:2");
   } finally {
     root.unmount();
     renderer.destroy();

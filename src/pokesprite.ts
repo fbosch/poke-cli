@@ -3,8 +3,12 @@ import type { QueryClient } from "@tanstack/react-query";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { match, P } from "ts-pattern";
-import { z } from "zod";
 import type { PokemonForm } from "./pokemon-detail";
+import {
+  pokespriteMetadataSchema,
+  type PokeSpriteMetadata,
+  type PokeSpritePokemonMetadata,
+} from "./pokesprite-schema";
 import { runtimeQueryCachePolicies } from "./query-cache";
 import type { SpeciesIndexEntry } from "./search";
 import {
@@ -117,46 +121,6 @@ type PokeSpriteCachedAssetQueryKey = readonly [
   formKey: string,
   shiny: boolean,
 ];
-
-const formMetadataSchema = z
-  .object({
-    has_female: z.boolean().optional(),
-    has_right: z.boolean().optional(),
-    has_unofficial_female_icon: z.boolean().optional(),
-    is_alias_of: z.string().optional(),
-  })
-  .transform((form) => ({
-    hasFemale: form.has_female ?? false,
-    hasRight: form.has_right ?? false,
-    hasUnofficialFemaleIcon: form.has_unofficial_female_icon ?? false,
-    isAliasOf: form.is_alias_of,
-  }));
-
-const pokemonMetadataEntrySchema = z
-  .object({
-    idx: z.string(),
-    name: z.object({ eng: z.string() }),
-    slug: z.object({ eng: z.string() }),
-    "gen-8": z
-      .object({
-        forms: z.record(z.string(), formMetadataSchema).optional(),
-      })
-      .optional(),
-  })
-  .transform((entry) => ({
-    dexNumber: Number.parseInt(entry.idx, 10),
-    forms: entry["gen-8"]?.forms ?? {},
-    name: entry.name.eng,
-    slug: entry.slug.eng,
-  }));
-
-const pokespriteMetadataSchema = z.record(
-  z.string(),
-  pokemonMetadataEntrySchema,
-);
-
-export type PokeSpriteMetadata = z.infer<typeof pokespriteMetadataSchema>;
-export type PokeSpritePokemonMetadata = PokeSpriteMetadata[string];
 
 export type PokeSpriteAssetReference = {
   formKey: string;
