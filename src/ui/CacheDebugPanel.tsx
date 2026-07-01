@@ -1,6 +1,6 @@
 import { RGBA } from "@opentui/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   queryCacheStorageStats,
   type QueryCacheStorageStats,
@@ -10,18 +10,41 @@ import { colors, textStyles } from "./design-tokens";
 const cachePanelBackground = RGBA.fromHex("#111022");
 const cachePanelTitle = RGBA.fromHex("#ffff00");
 const cachePanelWidth = 72;
+const cacheStatsRefreshDelayMs = 250;
 
 export function CacheDebugPanel() {
   const queryClient = useQueryClient();
   const [stats, setStats] = useState<QueryCacheStorageStats | undefined>();
+  const refreshTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const refreshStats = useCallback(() => {
     void queryCacheStorageStats().then(setStats);
   }, []);
+  const scheduleRefreshStats = useCallback(() => {
+    if (refreshTimeout.current !== undefined) {
+      clearTimeout(refreshTimeout.current);
+    }
+
+    refreshTimeout.current = setTimeout(() => {
+      refreshTimeout.current = undefined;
+      refreshStats();
+    }, cacheStatsRefreshDelayMs);
+  }, [refreshStats]);
 
   useEffect(() => {
     refreshStats();
-    return queryClient.getQueryCache().subscribe(refreshStats);
-  }, [queryClient, refreshStats]);
+    const unsubscribe = queryClient
+      .getQueryCache()
+      .subscribe(scheduleRefreshStats);
+    return () => {
+      unsubscribe();
+      if (refreshTimeout.current !== undefined) {
+        clearTimeout(refreshTimeout.current);
+        refreshTimeout.current = undefined;
+      }
+    };
+  }, [queryClient, refreshStats, scheduleRefreshStats]);
 
   return <CacheDebugPanelView stats={stats} />;
 }
