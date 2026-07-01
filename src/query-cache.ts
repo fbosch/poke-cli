@@ -200,42 +200,61 @@ export function createFileStorage(cacheDirectory: string): AsyncStorage {
 }
 
 export function createSqliteQueryStorage(cacheDirectory: string): AsyncStorage {
-  let databasePromise: Promise<Database> | undefined;
+  let connectionPromise: Promise<QueryCacheConnection> | undefined;
 
-  const getDatabase = async (): Promise<Database> => {
-    databasePromise ??= openQueryCacheDatabase(cacheDirectory);
-    return databasePromise;
+  const getConnection = async (): Promise<QueryCacheConnection> => {
+    connectionPromise ??= openQueryCacheConnection(cacheDirectory);
+    return connectionPromise;
   };
 
   return {
     async entries() {
-      const rows = (await getDatabase())
-        .query("SELECT key, value FROM query_cache")
-        .all() as QueryCacheRow[];
+      const rows = (await getConnection()).entries.all() as QueryCacheRow[];
       return rows.map((row) => [row.key, row.value]);
     },
     async getItem(key) {
-      const row = (await getDatabase())
-        .query("SELECT value FROM query_cache WHERE key = $key")
-        .get({ $key: key }) as Pick<QueryCacheRow, "value"> | null;
+      const row = (await getConnection()).getItem.get({ $key: key }) as Pick<
+        QueryCacheRow,
+        "value"
+      > | null;
       return row?.value ?? null;
     },
     async removeItem(key) {
-      (await getDatabase())
-        .query("DELETE FROM query_cache WHERE key = $key")
-        .run({ $key: key });
+      (await getConnection()).removeItem.run({ $key: key });
     },
     async setItem(key, value) {
       const shard = queryCacheShardForPersistedValue(value);
-      (await getDatabase())
-        .query(
-          `INSERT INTO query_cache (key, shard, value)
-           VALUES ($key, $shard, $value)
-           ON CONFLICT(key) DO UPDATE SET shard = excluded.shard, value = excluded.value
-           WHERE query_cache.shard != excluded.shard OR query_cache.value != excluded.value`,
-        )
-        .run({ $key: key, $shard: shard, $value: value });
+      (await getConnection()).setItem.run({
+        $key: key,
+        $shard: shard,
+        $value: value,
+      });
     },
+  };
+}
+
+type QueryCacheConnection = ReturnType<typeof createQueryCacheConnection>;
+
+async function openQueryCacheConnection(
+  cacheDirectory: string,
+): Promise<QueryCacheConnection> {
+  return createQueryCacheConnection(
+    await openQueryCacheDatabase(cacheDirectory),
+  );
+}
+
+function createQueryCacheConnection(database: Database) {
+  return {
+    database,
+    entries: database.query("SELECT key, value FROM query_cache"),
+    getItem: database.query("SELECT value FROM query_cache WHERE key = $key"),
+    removeItem: database.query("DELETE FROM query_cache WHERE key = $key"),
+    setItem: database.query(
+      `INSERT INTO query_cache (key, shard, value)
+       VALUES ($key, $shard, $value)
+       ON CONFLICT(key) DO UPDATE SET shard = excluded.shard, value = excluded.value
+       WHERE query_cache.shard != excluded.shard OR query_cache.value != excluded.value`,
+    ),
   };
 }
 
