@@ -610,18 +610,6 @@ function usePokemonSpritePrefetch({
 
     void prewarmTerminalSpriteImage(cachedAsset.data.filePath);
   }, [cachedAsset.data, terminalImageSupport]);
-  useEffect(() => {
-    if (enabled === false || terminalImageSupport === undefined) {
-      return;
-    }
-
-    void queryClient
-      .fetchQuery(
-        pokespriteCachedAssetQueryOptions(species, queryClient, !shiny, form),
-      )
-      .then((asset) => prewarmTerminalSpriteImage(asset.filePath))
-      .catch(() => undefined);
-  }, [enabled, form, queryClient, shiny, species, terminalImageSupport]);
 }
 
 function useAbilityDetailsPreload({
