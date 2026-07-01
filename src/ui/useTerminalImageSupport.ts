@@ -1,22 +1,31 @@
 import type { TerminalCapabilities } from "@opentui/core";
 import { useRenderer } from "@opentui/react";
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { detectTerminalImageSupport } from "#src/terminal-images.ts";
 
 export function useTerminalImageSupport() {
   const renderer = useRenderer();
-  const [capabilities, setCapabilities] = useState(renderer.capabilities);
+  const subscribeToCapabilities = useCallback(
+    (onStoreChange: () => void) => {
+      const handleCapabilities = (_nextCapabilities: TerminalCapabilities) => {
+        onStoreChange();
+      };
 
-  useEffect(() => {
-    const handleCapabilities = (nextCapabilities: TerminalCapabilities) => {
-      setCapabilities(nextCapabilities);
-    };
-
-    renderer.on("capabilities", handleCapabilities);
-    return () => {
-      renderer.off("capabilities", handleCapabilities);
-    };
-  }, [renderer]);
+      renderer.on("capabilities", handleCapabilities);
+      return () => {
+        renderer.off("capabilities", handleCapabilities);
+      };
+    },
+    [renderer],
+  );
+  const getCapabilitiesSnapshot = useCallback(
+    () => renderer.capabilities,
+    [renderer],
+  );
+  const capabilities = useSyncExternalStore(
+    subscribeToCapabilities,
+    getCapabilitiesSnapshot,
+  );
 
   if (
     capabilities === null ||
